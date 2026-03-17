@@ -78,6 +78,59 @@ img{max-width:100%;display:block}
 ::-webkit-scrollbar-thumb{background:var(--forest4);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--gold)}
 
+/* Skip Links for Accessibility */
+.skip-link{
+  position:absolute;
+  top:-100%;
+  left:12px;
+  z-index:9999;
+  background:var(--teal);
+  color:#fff;
+  padding:12px 20px;
+  font-size:.8rem;
+  font-family:'Cinzel',serif;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  border-radius:var(--r);
+  transition:top .2s;
+}
+.skip-link:focus{
+  top:12px;
+}
+
+/* Nav Countdown */
+.nav-countdown{
+  display:none;
+  align-items:center;
+  gap:8px;
+  margin-left:16px;
+  padding:6px 12px;
+  background:rgba(0,0,0,.3);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+}
+@media(min-width:1024px){
+  .nav-countdown{display:flex}
+}
+.nav-cd-unit{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-width:28px;
+}
+.nav-cd-num{
+  font-family:'Cinzel',serif;
+  font-size:.9rem;
+  color:var(--teal3);
+  line-height:1;
+}
+.nav-cd-label{
+  font-size:.5rem;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
 /* Reduce motion */
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{
@@ -139,6 +192,114 @@ img{max-width:100%;display:block}
   100%{background-position:300%}
 }
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes skeleton-pulse{
+  0%,100%{opacity:.4}
+  50%{opacity:.8}
+}
+
+/* Skeleton Loading States */
+.skeleton{
+  background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.05) 75%);
+  background-size:200% 100%;
+  animation:skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius:var(--r);
+}
+.skeleton-text{
+  height:1em;
+  margin:.5em 0;
+  border-radius:4px;
+}
+.skeleton-title{
+  height:2em;
+  width:60%;
+  margin:0 auto 1em;
+  border-radius:4px;
+}
+.skeleton-card{
+  height:120px;
+  margin-bottom:12px;
+  border-radius:var(--r-lg);
+}
+.skeleton-avatar{
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  margin:0 auto 16px;
+}
+
+/* Conditional Form Fields */
+.form-field-conditional{
+  display:none;
+  transition:all var(--dur) var(--ease);
+  overflow:hidden;
+  max-height:0;
+  opacity:0;
+}
+.form-field-conditional.visible{
+  display:block;
+  max-height:200px;
+  opacity:1;
+  margin-bottom:14px;
+}
+
+/* ARIA Live Region Announcements */
+.sr-only{
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
+
+/* Live Region Styles */
+[aria-live="polite"]{
+  transition:opacity .3s;
+}
+[aria-live="assertive"]{
+  /* Higher priority announcements */
+}
+
+/* Push Notification Prompt */
+#pushPrompt{
+  display:none;
+  position:fixed;
+  bottom:calc(var(--tab-bar-height) + 100px);
+  right:12px;
+  z-index:950;
+  max-width:280px;
+  padding:16px;
+  background:var(--forest3);
+  border:1px solid var(--border2);
+  border-radius:var(--r-lg);
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  animation:slideIn .3s ease;
+}
+#pushPrompt.show{display:block}
+.push-prompt-title{
+  font-family:'Cinzel',serif;
+  font-size:.7rem;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--gold3);
+  margin-bottom:8px;
+}
+.push-prompt-text{
+  font-size:.8rem;
+  color:var(--muted);
+  margin-bottom:12px;
+  line-height:1.6;
+}
+.push-prompt-btns{
+  display:flex;
+  gap:8px;
+}
+@media(min-width:901px){
+  #pushPrompt{bottom:80px}
+}
 
 /* ============================================
    TOP NAVIGATION (Mobile & Desktop)
@@ -1897,13 +2058,16 @@ select.form-input option{background:var(--forest)}
    ============================================ */
 #waFloat{
   position:fixed;
-  bottom:calc(var(--tab-bar-height) + 16px);
+  bottom:calc(var(--tab-bar-height) + 80px);
   left:12px;
   z-index:900;
   display:flex;
   flex-direction:column;
   gap:8px;
   animation:fadeIn 2s 2s ease both;
+}
+@media(min-width:901px){
+  #waFloat{bottom:20px}
 }
 .wa-float-btn{
   display:flex;
@@ -2229,15 +2393,37 @@ select.form-input option{background:var(--forest)}
 <body>
 <noscript><div style="background:#0C1A0E;color:#EFC060;text-align:center;padding:40px;font-family:serif;font-size:1.2rem">Please enable JavaScript to view the Hawau &amp; Lukman Wedding Live Stream. <a href="https://wa.me/2348023193526" style="color:#3DD4C8">Contact us via WhatsApp</a></div></noscript>
 
+<!-- Skip Links for Accessibility -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<a href="#mobileTabs" class="skip-link">Skip to navigation</a>
+
 <!-- TOP NAVIGATION -->
 <nav id="nav" role="navigation" aria-label="Main navigation">
   <span class="n-logo">H &amp; L</span>
+  
+  <!-- Persistent Countdown in Nav -->
+  <div class="nav-countdown" aria-live="polite" aria-label="Countdown to wedding">
+    <span id="navCdDays" class="nav-cd-unit">
+      <span class="nav-cd-num" id="nav-cd-d">--</span>
+      <span class="nav-cd-label">D</span>
+    </span>
+    <span id="navCdHours" class="nav-cd-unit">
+      <span class="nav-cd-num" id="nav-cd-h">--</span>
+      <span class="nav-cd-label">H</span>
+    </span>
+    <span id="navCdMins" class="nav-cd-unit">
+      <span class="nav-cd-num" id="nav-cd-m">--</span>
+      <span class="nav-cd-label">M</span>
+    </span>
+  </div>
+  
   <div class="n-links">
     <a class="n-a" href="#stream" onclick="switchTab('stream')">Live Stream</a>
     <a class="n-a" href="#about" onclick="switchTab('about')">The Couple</a>
     <a class="n-a" href="#rsvp" onclick="switchTab('rsvp')">RSVP</a>
     <a class="n-a" href="#wishes" onclick="switchTab('wishes')">Wishes</a>
     <a class="n-a" href="#gifts" onclick="switchTab('gifts')">Gifts</a>
+    <a class="n-a" href="#info" onclick="switchTab('info')">Info</a>
     <button class="n-live" onclick="switchTab('stream')"><span class="ldot"></span> Watch Live</button>
   </div>
   <button class="n-toggle" onclick="toggleNav()">&#9776;</button>
@@ -2245,6 +2431,7 @@ select.form-input option{background:var(--forest)}
 
 <div class="n-backdrop" id="navBackdrop" onclick="closeNav()"></div>
 <div class="n-drawer" id="navDrawer">
+  <a class="n-a" href="#" onclick="switchTab('hero');closeNav()">Home</a>
   <a class="n-a" href="#" onclick="switchTab('stream');closeNav()">Live Stream</a>
   <a class="n-a" href="#" onclick="switchTab('about');closeNav()">The Couple</a>
   <a class="n-a" href="#" onclick="switchTab('rsvp');closeNav()">RSVP</a>
@@ -2297,7 +2484,7 @@ select.form-input option{background:var(--forest)}
 </section>
 
 <!-- STREAM SECTION -->
-<main id="stream" class="tab-panel" role="main" aria-label="Live stream">
+<main id="main-content" class="tab-panel" role="main" aria-label="Live stream">
   <div class="container">
     <p class="sec-label">Live Stream</p>
     <h2 class="sec-title">Watch the Ceremony</h2>
@@ -2510,15 +2697,15 @@ select.form-input option{background:var(--forest)}
           </div>
           <div class="form-group">
             <label>I will be attending *</label>
-            <div class="attend-opts">
-              <div class="a-opt"><input type="radio" name="attend" id="aPhysical" value="physical"><label for="aPhysical"><span>&#127983;</span><span>In Person</span></label></div>
-              <div class="a-opt"><input type="radio" name="attend" id="aVirtual" value="virtual" checked><label for="aVirtual"><span>&#128187;</span><span>Virtually</span></label></div>
-              <div class="a-opt"><input type="radio" name="attend" id="aRegrets" value="regrets"><label for="aRegrets"><span>&#128140;</span><span>Regrets</span></label></div>
+            <div class="attend-opts" role="radiogroup" aria-label="Attendance type">
+              <div class="a-opt"><input type="radio" name="attend" id="aPhysical" value="physical" onchange="toggleConditionalFields()"><label for="aPhysical"><span>&#127983;</span><span>In Person</span></label></div>
+              <div class="a-opt"><input type="radio" name="attend" id="aVirtual" value="virtual" checked onchange="toggleConditionalFields()"><label for="aVirtual"><span>&#128187;</span><span>Virtually</span></label></div>
+              <div class="a-opt"><input type="radio" name="attend" id="aRegrets" value="regrets" onchange="toggleConditionalFields()"><label for="aRegrets"><span>&#128140;</span><span>Regrets</span></label></div>
             </div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Party Size</label><input type="number" id="rsvpParty" class="form-input" value="1" min="1" max="15"></div>
-            <div class="form-group"><label>Dietary Notes</label><input type="text" id="rsvpDiet" class="form-input" placeholder="Halal, Vegetarian..."></div>
+            <div class="form-group" id="partySizeField"><label>Party Size</label><input type="number" id="rsvpParty" class="form-input" value="1" min="1" max="15"></div>
+            <div class="form-group form-field-conditional" id="dietaryField"><label>Dietary Notes <span style="color:var(--muted);font-size:.7rem">(In-Person)</span></label><input type="text" id="rsvpDiet" class="form-input" placeholder="Halal, Vegetarian..."></div>
           </div>
           <div class="form-group"><label>Message for the Couple</label><textarea id="rsvpMsg" class="form-input" placeholder="A warm message..."></textarea></div>
           
@@ -2619,8 +2806,8 @@ select.form-input option{background:var(--forest)}
   </div>
 </section>
 
-<!-- GIFTS SECTION (Mobile Only) -->
-<section id="gifts" class="tab-panel mobile-only">
+<!-- GIFTS SECTION (Available on both Mobile and Desktop) -->
+<section id="gifts" class="tab-panel">
   <div class="container">
     <p class="sec-label">Gifts & Wishes</p>
     <h2 class="sec-title">Gift the Couple</h2>
@@ -2764,33 +2951,33 @@ select.form-input option{background:var(--forest)}
 </footer>
 
 <!-- MOBILE TAB NAVIGATION (Bottom) -->
-<nav id="mobileTabs" role="navigation" aria-label="Mobile section navigation">
-  <button class="tab-btn active" data-tab="hero" onclick="switchTab('hero')">
+<nav id="mobileTabs" role="tablist" aria-label="Mobile section navigation">
+  <button class="tab-btn active" data-tab="hero" onclick="switchTab('hero')" role="tab" aria-selected="true" aria-controls="hero">
     <span class="tab-icon">&#127968;</span>
     <span class="tab-label">Home</span>
   </button>
-  <button class="tab-btn has-live" data-tab="stream" onclick="switchTab('stream')">
+  <button class="tab-btn has-live" data-tab="stream" onclick="switchTab('stream')" role="tab" aria-selected="false" aria-controls="main-content">
     <span class="tab-live-dot"></span>
     <span class="tab-icon">&#127909;</span>
     <span class="tab-label">Stream</span>
   </button>
-  <button class="tab-btn" data-tab="about" onclick="switchTab('about')">
+  <button class="tab-btn" data-tab="about" onclick="switchTab('about')" role="tab" aria-selected="false" aria-controls="about">
     <span class="tab-icon">&#128141;</span>
     <span class="tab-label">Couple</span>
   </button>
-  <button class="tab-btn" data-tab="rsvp" onclick="switchTab('rsvp')">
+  <button class="tab-btn" data-tab="rsvp" onclick="switchTab('rsvp')" role="tab" aria-selected="false" aria-controls="rsvp">
     <span class="tab-icon">&#128140;</span>
     <span class="tab-label">RSVP</span>
   </button>
-  <button class="tab-btn" data-tab="wishes" onclick="switchTab('wishes')">
+  <button class="tab-btn" data-tab="wishes" onclick="switchTab('wishes')" role="tab" aria-selected="false" aria-controls="wishes">
     <span class="tab-icon">&#128152;</span>
     <span class="tab-label">Wishes</span>
   </button>
-  <button class="tab-btn" data-tab="gifts" onclick="switchTab('gifts')">
+  <button class="tab-btn" data-tab="gifts" onclick="switchTab('gifts')" role="tab" aria-selected="false" aria-controls="gifts">
     <span class="tab-icon">&#127873;</span>
     <span class="tab-label">Gifts</span>
   </button>
-  <button class="tab-btn" data-tab="info" onclick="switchTab('info')">
+  <button class="tab-btn" data-tab="info" onclick="switchTab('info')" role="tab" aria-selected="false" aria-controls="info-section">
     <span class="tab-icon">&#8505;</span>
     <span class="tab-label">Info</span>
   </button>
@@ -2823,7 +3010,21 @@ select.form-input option{background:var(--forest)}
   </a>
 </div>
 
-<div id="toast"></div>
+<div id="toast" role="alert" aria-live="polite"></div>
+
+<!-- ARIA Live Regions for Screen Readers -->
+<div id="liveRegion" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+<div id="assertiveRegion" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- Push Notification Prompt -->
+<div id="pushPrompt" role="dialog" aria-labelledby="pushPromptTitle" aria-describedby="pushPromptText">
+  <p class="push-prompt-title" id="pushPromptTitle">&#128276; Get Notified</p>
+  <p class="push-prompt-text" id="pushPromptText">Be the first to know when the wedding goes live! We'll send you a notification.</p>
+  <div class="push-prompt-btns">
+    <button class="btn btn-primary btn-sm" onclick="enableNotifications()">Enable</button>
+    <button class="btn btn-outline btn-sm" onclick="dismissPushPrompt()">Later</button>
+  </div>
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -2847,15 +3048,29 @@ const PROG = [
 ];
 
 /* ============================================
-   STARS CANVAS ANIMATION
+   STARS CANVAS ANIMATION (Optimized)
    ============================================ */
 (()=>{
   const c=document.getElementById('starsCanvas');
-  function draw(){
+  let animationFrame;
+  let lastDrawTime = 0;
+  const throttleMs = 100; // Throttle redraws for performance
+  
+  function draw(timestamp){
+    if (timestamp - lastDrawTime < throttleMs) {
+      animationFrame = requestAnimationFrame(draw);
+      return;
+    }
+    lastDrawTime = timestamp;
+    
     c.width=innerWidth;
     c.height=innerHeight;
     const ctx=c.getContext('2d');
-    for(let i=0;i<100;i++){
+    
+    // Reduce star count on mobile for battery saving
+    const starCount = innerWidth < 768 ? 60 : 100;
+    
+    for(let i=0;i<starCount;i++){
       const x=(Math.sin(i*131.7)*.5+.5)*c.width;
       const y=(Math.cos(i*97.3)*.5+.5)*c.height;
       const r=.3+(i%5)*.18;
@@ -2867,8 +3082,28 @@ const PROG = [
     }
     ctx.globalAlpha=1;
   }
-  draw();
-  window.addEventListener('resize',draw);
+  
+  // Use requestAnimationFrame for smooth animation
+  animationFrame = requestAnimationFrame(draw);
+  
+  // Debounced resize handler
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = requestAnimationFrame(draw);
+    }, 150);
+  });
+  
+  // Pause animation when tab is not visible (battery saving)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      cancelAnimationFrame(animationFrame);
+    } else {
+      animationFrame = requestAnimationFrame(draw);
+    }
+  });
 })();
 
 /* ============================================
@@ -2880,22 +3115,33 @@ function switchTab(tabId) {
   // Map 'info' to 'info-section'
   const sectionId = tabId === 'info' ? 'info-section' : tabId;
   
-  // Update tab buttons
+  // Update tab buttons with ARIA
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tabId);
+    const isActive = btn.dataset.tab === tabId;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    if (isActive) {
+      btn.setAttribute('tabindex', '0');
+    }
   });
   
-  // Update tab panels
+  // Update tab panels with ARIA
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.remove('active');
+    panel.setAttribute('aria-hidden', 'true');
   });
   
   const targetSection = document.getElementById(sectionId);
   if (targetSection) {
     targetSection.classList.add('active');
+    targetSection.setAttribute('aria-hidden', 'false');
     
     // Scroll to top of page for mobile tabs
     window.scrollTo({ top: 0, behavior: 'instant' });
+    
+    // Announce to screen readers
+    const tabLabel = document.querySelector(`.tab-btn[data-tab="${tabId}"] .tab-label`)?.textContent || tabId;
+    announceToScreenReader(`Now viewing ${tabLabel} section`);
   }
   
   currentTab = tabId;
@@ -2906,6 +3152,7 @@ function switchTab(tabId) {
 document.addEventListener('DOMContentLoaded', () => {
   // Show hero by default
   document.getElementById('hero').classList.add('active');
+  document.getElementById('hero').setAttribute('aria-hidden', 'false');
 });
 
 /* ============================================
@@ -2934,17 +3181,32 @@ function tick() {
   const diff = WEDDING - Date.now();
   if (diff <= 0) {
     ['cd-d','cd-h','cd-m','cd-s'].forEach(id => document.getElementById(id).textContent = '00');
+    // Update nav countdown
+    ['nav-cd-d','nav-cd-h','nav-cd-m'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = '00'; });
     const preLiveMsg = document.getElementById('preLiveMsg');
     if (preLiveMsg) preLiveMsg.textContent = '🎉 Ceremony is underway!';
     return;
   }
   const p = v => String(Math.floor(v)).padStart(2, '0');
-  document.getElementById('cd-d').textContent = p(diff / 86400000);
-  document.getElementById('cd-h').textContent = p((diff % 86400000) / 3600000);
-  document.getElementById('cd-m').textContent = p((diff % 3600000) / 60000);
-  document.getElementById('cd-s').textContent = p((diff % 60000) / 1000);
-  
   const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
+  
+  // Main countdown
+  document.getElementById('cd-d').textContent = p(days);
+  document.getElementById('cd-h').textContent = p(hours);
+  document.getElementById('cd-m').textContent = p(mins);
+  document.getElementById('cd-s').textContent = p(secs);
+  
+  // Nav countdown (persistent)
+  const navCdD = document.getElementById('nav-cd-d');
+  const navCdH = document.getElementById('nav-cd-h');
+  const navCdM = document.getElementById('nav-cd-m');
+  if (navCdD) navCdD.textContent = p(days);
+  if (navCdH) navCdH.textContent = p(hours);
+  if (navCdM) navCdM.textContent = p(mins);
+  
   const preLiveMsg = document.getElementById('preLiveMsg');
   if (preLiveMsg) {
     preLiveMsg.textContent = days > 0 
@@ -2954,6 +3216,127 @@ function tick() {
 }
 tick();
 setInterval(tick, 1000);
+
+/* ============================================
+   CONDITIONAL FORM FIELDS
+   ============================================ */
+function toggleConditionalFields() {
+  const physical = document.getElementById('aPhysical');
+  const dietaryField = document.getElementById('dietaryField');
+  const partySizeField = document.getElementById('partySizeField');
+  
+  if (physical && physical.checked) {
+    // Show dietary field for in-person attendees
+    if (dietaryField) dietaryField.classList.add('visible');
+    if (partySizeField) partySizeField.style.display = 'block';
+  } else {
+    // Hide dietary field for virtual/regrets
+    if (dietaryField) dietaryField.classList.remove('visible');
+    // Hide party size for regrets
+    const regrets = document.getElementById('aRegrets');
+    if (partySizeField && regrets && regrets.checked) {
+      partySizeField.style.display = 'none';
+    } else if (partySizeField) {
+      partySizeField.style.display = 'block';
+    }
+  }
+}
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', toggleConditionalFields);
+
+/* ============================================
+   SCREEN READER ANNOUNCEMENTS
+   ============================================ */
+function announceToScreenReader(message, assertive = false) {
+  const region = document.getElementById(assertive ? 'assertiveRegion' : 'liveRegion');
+  if (region) {
+    region.textContent = '';
+    setTimeout(() => { region.textContent = message; }, 100);
+  }
+}
+
+/* ============================================
+   PUSH NOTIFICATIONS
+   ============================================ */
+let pushPromptDismissed = false;
+
+function showPushPrompt() {
+  if (pushPromptDismissed || localStorage.getItem('pushDismissed')) return;
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+  
+  const prompt = document.getElementById('pushPrompt');
+  if (prompt) {
+    setTimeout(() => { prompt.classList.add('show'); }, 3000);
+  }
+}
+
+function dismissPushPrompt() {
+  const prompt = document.getElementById('pushPrompt');
+  if (prompt) prompt.classList.remove('show');
+  pushPromptDismissed = true;
+  localStorage.setItem('pushDismissed', 'true');
+}
+
+async function enableNotifications() {
+  if (!('Notification' in window)) {
+    toast('Your browser doesn\'t support notifications');
+    return;
+  }
+  
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      toast('✅ Notifications enabled! We\'ll notify you when the event starts.');
+      announceToScreenReader('Push notifications enabled successfully');
+      // Store subscription preference
+      localStorage.setItem('pushEnabled', 'true');
+    } else {
+      toast('Notifications blocked. You can enable them in browser settings.');
+    }
+  } catch (err) {
+    console.error('Notification error:', err);
+  }
+  
+  dismissPushPrompt();
+}
+
+function notifyLive() {
+  if (Notification.permission === 'granted') {
+    new Notification('💍 Hawau & Lukman Wedding is LIVE!', {
+      body: 'The ceremony has started! Click to watch.',
+      icon: '/og-image.png',
+      tag: 'wedding-live',
+      requireInteraction: true
+    });
+  }
+}
+
+// Show push prompt after page loads
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(showPushPrompt, 5000);
+});
+
+/* ============================================
+   SKELETON LOADING
+   ============================================ */
+function showSkeletonLoading(containerId, type = 'card', count = 3) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  container.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const skeleton = document.createElement('div');
+    skeleton.className = `skeleton skeleton-${type}`;
+    skeleton.setAttribute('aria-hidden', 'true');
+    container.appendChild(skeleton);
+  }
+}
+
+function hideSkeletonLoading(containerId, content) {
+  const container = document.getElementById(containerId);
+  if (container) container.innerHTML = content;
+}
 
 /* ============================================
    SIDEBAR PROGRAMME
@@ -2989,6 +3372,8 @@ socket.on('reaction:bump', ({emoji, cnt}) => updateReactionCount(emoji, cnt));
 socket.on('stream:golive', ({meetLink}) => {
   activateStream(meetLink);
   toast('🔴 The ceremony is now LIVE!', 4500);
+  announceToScreenReader('The wedding ceremony is now live!', true);
+  notifyLive();
 });
 socket.on('stream:ended', () => {
   document.getElementById('endedOverlay').classList.add('show');
