@@ -2048,18 +2048,21 @@ select.form-input option{background:var(--forest)}
    ============================================ */
 @media(min-width:901px){
   .rsvp-gb-grid{
-    display:block;
-    max-width:700px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:32px;
+    align-items:start;
+    max-width:1100px;
     margin:0 auto;
   }
-  .rsvp-column{
+  .rsvp-column, .gb-column{
     background:rgba(0,0,0,.15);
     border:1px solid var(--border);
     border-radius:var(--r-lg);
     padding:28px;
     position:relative;
   }
-  .rsvp-column::before{
+  .rsvp-column::before, .gb-column::before{
     content:'';
     position:absolute;
     top:0;
@@ -2071,11 +2074,11 @@ select.form-input option{background:var(--forest)}
 }
 
 /* Desktop/Mobile visibility helpers */
-.desktop-only{display:none}
-.mobile-only{display:block}
+.desktop-only{display:none!important}
+.mobile-only{display:block!important}
 @media(min-width:901px){
-  .desktop-only{display:block}
-  .mobile-only{display:none}
+  .desktop-only{display:block!important}
+  .mobile-only{display:none!important}
 }
 
 /* Gift Section Styles */
@@ -2530,12 +2533,52 @@ select.form-input option{background:var(--forest)}
           <p class="success-msg">JazakAllahu khairan! Your RSVP has been recorded. We look forward to celebrating with you!</p>
         </div>
       </div>
+      
+      <!-- Guestbook Column (Desktop Only - side by side with RSVP) -->
+      <div class="gb-column desktop-only">
+        <p class="sec-label">Guest Book</p>
+        <h2 class="sec-title">Leave Your Wishes</h2>
+        <p class="sec-sub">Share your blessings and congratulations with the happy couple.</p>
+        <div class="ornament"><div class="o-gem"></div></div>
+        
+        <div class="gb-form-wrap">
+          <div class="form-group"><label>Your Name *</label><input type="text" id="gbNameDesktop" class="form-input" placeholder="Your name" maxlength="80"></div>
+          <div class="form-row">
+            <div class="form-group"><label>Email</label><input type="email" id="gbEmailDesktop" class="form-input" placeholder="your@email.com"></div>
+            <div class="form-group"><label>Location</label><input type="text" id="gbLocDesktop" class="form-input" placeholder="City, Country"></div>
+          </div>
+          <div class="form-group"><label>Your Relationship</label>
+            <select id="gbRelDesktop" class="form-input">
+              <option value="Friend">Friend</option>
+              <option value="Family">Family</option>
+              <option value="Colleague">Colleague</option>
+              <option value="Guest">Guest</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Your Message *</label><textarea id="gbMsgDesktop" class="form-input" placeholder="Write your wishes for the couple..." maxlength="600"></textarea></div>
+          <button class="btn btn-gold" onclick="submitGBDesktop(this)" style="width:100%">
+            <span class="sp"></span><span class="bt">&#9997; Submit Message</span>
+          </button>
+        </div>
+        
+        <div class="gb-entries-hd">
+          <span>Messages</span>
+          <span class="gb-count" id="gbCountLabelDesktop">0 messages</span>
+        </div>
+        <div class="gb-entries" id="gbEntriesDesktop"></div>
+        <div class="gb-pagination">
+          <button class="pg-btn" id="gbPrevDesktop" onclick="gbChangePageDesktop(-1)">&#8592; Prev</button>
+          <span class="pg-info" id="gbPageInfoDesktop">Page 1 of 1</span>
+          <button class="pg-btn" id="gbNextDesktop" onclick="gbChangePageDesktop(1)">Next &#8594;</button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- WISHES TAB -->
-<section id="wishes" class="tab-panel">
+<!-- WISHES TAB (Mobile Only) -->
+<section id="wishes" class="tab-panel mobile-only">
   <div class="container">
     <p class="sec-label">Guest Book</p>
     <h2 class="sec-title">Leave Your Wishes</h2>
@@ -2576,8 +2619,8 @@ select.form-input option{background:var(--forest)}
   </div>
 </section>
 
-<!-- GIFTS SECTION -->
-<section id="gifts" class="tab-panel">
+<!-- GIFTS SECTION (Mobile Only) -->
+<section id="gifts" class="tab-panel mobile-only">
   <div class="container">
     <p class="sec-label">Gifts & Wishes</p>
     <h2 class="sec-title">Gift the Couple</h2>
@@ -2619,7 +2662,58 @@ select.form-input option{background:var(--forest)}
     <h2 class="sec-title">Everything You Need</h2>
     <div class="ornament"><div class="o-gem"></div></div>
     
-    <div class="info-grid">
+    <!-- Desktop: Full info grid with all cards -->
+    <div class="info-grid desktop-only">
+      <div class="ic">
+        <div class="ic-icon">&#128205;</div>
+        <h4 class="ic-title">Venue</h4>
+        <p class="ic-text">Marque Event Centre<br>Odi Olowo Local Government<br>22 Town Planning Way<br>Ilupeju, Lagos 102215, Nigeria</p>
+        <a href="https://maps.google.com/?q=Marque+Event+Centre+22+Town+Planning+Way+Ilupeju+Lagos+Nigeria" target="_blank" rel="noopener" class="ic-link">Open in Maps &#8594;</a>
+      </div>
+      
+      <div class="ic">
+        <div class="ic-icon">&#128197;</div>
+        <h4 class="ic-title">Date & Time</h4>
+        <p class="ic-text">Sunday, 19 April 2026<br>Engagement: 11:00 AM WAT<br>Nikkah: 1:00 PM WAT<br>White &amp; Green Dress Code &#127807;</p>
+        <button class="ic-link" onclick="openCalModal()">Add to Calendar &#8594;</button>
+      </div>
+      
+      <div class="ic">
+        <div class="ic-icon">&#128241;</div>
+        <h4 class="ic-title">RSVP & Contact</h4>
+        <p class="ic-text">WhatsApp RSVP<br>
+          <a href="https://wa.me/2348023193526" target="_blank" style="color:var(--teal3)">Bride: +234 802 319 3526</a><br>
+          <a href="https://wa.me/2347060957637" target="_blank" style="color:var(--teal3)">Groom: +234 706 095 7637</a>
+        </p>
+        <a href="https://wa.me/2348023193526" target="_blank" rel="noopener" class="ic-link">WhatsApp Bride &#8594;</a>
+      </div>
+      
+      <div class="ic">
+        <div class="ic-icon">&#128187;</div>
+        <h4 class="ic-title">Virtual Attendance</h4>
+        <p class="ic-text">Watch the entire ceremony live from anywhere. No app needed — just open this page on your device.</p>
+        <button class="ic-link" onclick="shareLink()">Share This Link &#8594;</button>
+      </div>
+      
+      <div class="ic">
+        <div class="ic-icon">&#127807;</div>
+        <h4 class="ic-title">Dress Code</h4>
+        <p class="ic-text">White &amp; Green — Asoebi welcome. Virtual guests: dress along in spirit from home!</p>
+      </div>
+      
+      <div class="ic">
+        <div class="ic-icon">&#127873;</div>
+        <h4 class="ic-title">Gifts & Wishes</h4>
+        <p class="ic-text">Your presence is the greatest gift. For monetary gifts:</p>
+        <p class="ic-text" style="margin-top:8px;font-size:0.7rem;">
+          <strong>HSBC</strong> - Raji Hawau - 85461456<br>
+          <strong>Paycom (Opay)</strong> - Lukman Adedokun - 8109257625
+        </p>
+      </div>
+    </div>
+    
+    <!-- Mobile: Simplified info grid -->
+    <div class="info-grid mobile-only">
       <div class="ic">
         <div class="ic-icon">&#128205;</div>
         <h4 class="ic-title">Venue</h4>
@@ -3516,6 +3610,79 @@ async function submitGB(btn) {
     toast('Error: ' + (r.error || 'Try again'));
   }
 }
+
+// Desktop Guestbook Functions
+let gbPageDesktop = 1;
+const gbPPDesktop = 5;
+let gbDataDesktop = [];
+
+function renderGBDesktop() {
+  const el = document.getElementById('gbEntriesDesktop');
+  if (!el) return;
+  el.innerHTML = '';
+  const start = (gbPageDesktop - 1) * gbPPDesktop;
+  const page = gbDataDesktop.slice(start, start + gbPPDesktop);
+  page.forEach(e => {
+    const d = document.createElement('div');
+    d.className = 'gb-entry';
+    d.innerHTML = `<div class="gb-e-hd"><span class="gb-e-name">${esc(e.name)}</span><span class="gb-e-loc">${e.location ? esc(e.location) : ''}</span></div><p class="gb-e-msg">${esc(e.message)}</p><div class="gb-e-ft"><span class="gb-e-rel">${esc(e.relation || 'Guest')}</span><span class="gb-e-time">${fmtDate(e.created_at)}</span></div>`;
+    el.appendChild(d);
+  });
+  const cnt = document.getElementById('gbCountLabelDesktop');
+  if (cnt) cnt.textContent = `${gbDataDesktop.length} messages`;
+  const pi = document.getElementById('gbPageInfoDesktop');
+  const totalPages = Math.max(1, Math.ceil(gbDataDesktop.length / gbPPDesktop));
+  if (pi) pi.textContent = `Page ${gbPageDesktop} of ${totalPages}`;
+  document.getElementById('gbPrevDesktop')?.classList.toggle('hidden', gbPageDesktop <= 1);
+  document.getElementById('gbNextDesktop')?.classList.toggle('hidden', gbPageDesktop >= totalPages);
+}
+
+function gbChangePageDesktop(dir) {
+  const totalPages = Math.max(1, Math.ceil(gbDataDesktop.length / gbPPDesktop));
+  gbPageDesktop = Math.max(1, Math.min(totalPages, gbPageDesktop + dir));
+  renderGBDesktop();
+}
+
+async function loadGuestbookDesktop() {
+  const r = await api('GET', '/api/guestbook?page=1&limit=100');
+  if (r.entries) {
+    gbDataDesktop = r.entries;
+    renderGBDesktop();
+  }
+}
+
+async function submitGBDesktop(btn) {
+  const name = document.getElementById('gbNameDesktop').value.trim();
+  const msg = document.getElementById('gbMsgDesktop').value.trim();
+  
+  if (!name) { shake('gbNameDesktop'); return toast('⚠️ Please enter your name'); }
+  if (!msg) { shake('gbMsgDesktop'); return toast('⚠️ Please write a message'); }
+  
+  setLoad(btn, true);
+  const r = await api('POST', '/api/guestbook', {
+    name,
+    email: document.getElementById('gbEmailDesktop')?.value.trim() || '',
+    location: document.getElementById('gbLocDesktop')?.value.trim() || '',
+    relation: document.getElementById('gbRelDesktop')?.value || 'Guest',
+    message: msg
+  });
+  setLoad(btn, false);
+  
+  if (r.ok) {
+    ['gbNameDesktop', 'gbEmailDesktop', 'gbLocDesktop', 'gbMsgDesktop'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    toast('✍️ Message added!');
+    loadGuestbookDesktop();
+    loadGuestbook(); // Also refresh mobile version
+  } else {
+    toast('Error: ' + (r.error || 'Try again'));
+  }
+}
+
+// Load desktop guestbook on page load
+loadGuestbookDesktop();
 
 /* ============================================
    CALENDAR
