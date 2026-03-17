@@ -2003,18 +2003,30 @@ select.form-input option{background:var(--forest)}
    Each section becomes a "tab panel" on mobile
    ============================================ */
 @media(max-width:900px){
-  /* Hide all sections except hero on mobile by default */
+  /* Hide all sections by default on mobile */
   .tab-panel{
-    display:none;
+    display:none !important;
   }
   .tab-panel.active{
-    display:block;
+    display:block !important;
     animation:fadeUp .3s ease;
   }
-  
-  /* Hero always visible */
+  /* Hero is also a tab panel - only show when active */
   #hero.tab-panel{
-    display:flex;
+    display:none !important;
+  }
+  #hero.tab-panel.active{
+    display:flex !important;
+  }
+  
+  /* Hide verse-band on mobile (decorative element) */
+  #verse-band{
+    display:none !important;
+  }
+  
+  /* Hide footer on mobile (tab bar provides navigation) */
+  #footer{
+    display:none !important;
   }
   
   /* Hide desktop nav links on mobile */
@@ -2325,7 +2337,7 @@ select.form-input option{background:var(--forest)}
 </section>
 
 <!-- VERSE BAND -->
-<div id="verse-band" class="tab-panel">
+<div id="verse-band">
   <div class="container">
     <p class="vb-arabic">&#1608;&#1614;&#1605;&#1616;&#1606;&#1618; &#1570;&#1610;&#1614;&#1575;&#1578;&#1616;&#1607;&#1616;&#1567; &#1571;&#1614;&#1606;&#1618; &#1582;&#1614;&#1604;&#1614;&#1602;&#1614; &#1604;&#1614;&#1603;&#1615;&#1605; &#1605;&#1617;&#1616;&#1606;&#1618; &#1571;&#1614;&#1606;&#1601;&#1615;&#1587;&#1616;&#1603;&#1615;&#1605;&#1618; &#1571;&#1614;&#1586;&#1618;&#1608;&#1614;&#1575;&#1580;&#1611;&#1575; &#1604;&#1617;&#1616;&#1578;&#1614;&#1587;&#1618;&#1603;&#1615;&#1606;&#1615;&#1608;&#1575;&#1567; &#1573;&#1616;&#1604;&#1614;&#1610;&#1618;&#1607;&#1614;&#1575; &#1608;&#1614;&#1580;&#1614;&#1593;&#1614;&#1604;&#1614; &#1576;&#1614;&#1610;&#1618;&#1606;&#1614;&#1603;&#1615;&#1605; &#1605;&#1617;&#1614;&#1608;&#1614;&#1583;&#1617;&#1614;&#1577;&#1611; &#1608;&#1614;&#1585;&#1614;&#1581;&#1618;&#1605;&#1614;&#1577;&#1611;</p>
     <p class="vb-english">"And of His signs is that He created for you from yourselves mates that you may find tranquillity in them; and He placed between you affection and mercy."</p>
@@ -2497,7 +2509,7 @@ select.form-input option{background:var(--forest)}
 </section>
 
 <!-- FOOTER -->
-<footer id="footer" class="tab-panel">
+<footer id="footer">
   <div class="ft-names">Hawau &amp; Lukman</div>
   <p class="ft-date">19 April 2026 &middot; Lagos, Nigeria</p>
   <p class="ft-tag">#HawauAndLukman2026</p>
@@ -2633,9 +2645,8 @@ function switchTab(tabId) {
   if (targetSection) {
     targetSection.classList.add('active');
     
-    // Scroll to top of section (accounting for nav)
-    const navHeight = document.getElementById('nav').offsetHeight;
-    window.scrollTo({ top: targetSection.offsetTop - navHeight, behavior: 'smooth' });
+    // Scroll to top of page for mobile tabs
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
   
   currentTab = tabId;
