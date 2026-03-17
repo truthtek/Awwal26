@@ -2345,7 +2345,16 @@ select.form-input option{background:var(--forest)}
   section{padding:80px 0}
   .sec-title{font-size:clamp(2.4rem,5vw,3.2rem)}
   
-  .info-grid{grid-template-columns:repeat(3,1fr)}
+  /* Info grid: 2 columns x 3 rows on desktop */
+  .info-grid{
+    grid-template-columns:repeat(2,1fr);
+    gap:20px;
+    max-width:800px;
+    margin:0 auto;
+  }
+  .info-grid .ic{
+    min-height:180px;
+  }
   
   /* Show desktop nav links */
   .n-links{display:flex}
@@ -2421,8 +2430,6 @@ select.form-input option{background:var(--forest)}
     <a class="n-a" href="#stream" onclick="switchTab('stream')">Live Stream</a>
     <a class="n-a" href="#about" onclick="switchTab('about')">The Couple</a>
     <a class="n-a" href="#rsvp" onclick="switchTab('rsvp')">RSVP</a>
-    <a class="n-a" href="#wishes" onclick="switchTab('wishes')">Wishes</a>
-    <a class="n-a" href="#gifts" onclick="switchTab('gifts')">Gifts</a>
     <a class="n-a" href="#info" onclick="switchTab('info')">Info</a>
     <button class="n-live" onclick="switchTab('stream')"><span class="ldot"></span> Watch Live</button>
   </div>
@@ -2806,8 +2813,8 @@ select.form-input option{background:var(--forest)}
   </div>
 </section>
 
-<!-- GIFTS SECTION (Available on both Mobile and Desktop) -->
-<section id="gifts" class="tab-panel">
+<!-- GIFTS SECTION (Mobile Only) -->
+<section id="gifts" class="tab-panel mobile-only">
   <div class="container">
     <p class="sec-label">Gifts & Wishes</p>
     <h2 class="sec-title">Gift the Couple</h2>
@@ -2943,8 +2950,6 @@ select.form-input option{background:var(--forest)}
     <a class="ft-a" href="#" onclick="switchTab('stream');return false">Live Stream</a>
     <a class="ft-a" href="#" onclick="switchTab('about');return false">The Couple</a>
     <a class="ft-a" href="#" onclick="switchTab('rsvp');return false">RSVP</a>
-    <a class="ft-a" href="#" onclick="switchTab('wishes');return false">Wishes</a>
-    <a class="ft-a" href="#" onclick="switchTab('gifts');return false">Gifts</a>
     <a class="ft-a" href="#" onclick="switchTab('info');return false">Info</a>
   </nav>
   <p class="ft-copy">Made with love &middot; Hawau &amp; Lukman 2026</p>
