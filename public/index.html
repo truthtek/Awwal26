@@ -1281,6 +1281,30 @@ section{
   align-items:start;
 }
 
+/* Combined RSVP + Guestbook grid for desktop */
+.rsvp-gb-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:24px;
+  align-items:start;
+}
+.rsvp-column, .gb-column{
+  background:rgba(0,0,0,.15);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:24px;
+  position:relative;
+}
+.rsvp-column::before, .gb-column::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:0;right:0;
+  height:2px;
+  background:linear-gradient(to right,transparent,var(--gold2),transparent);
+  border-radius:var(--r-lg) var(--r-lg) 0 0;
+}
+
 .rsvp-card{
   background:rgba(0,0,0,.25);
   border:1px solid var(--border);
@@ -1992,6 +2016,15 @@ select.form-input option{background:var(--forest)}
   
   /* Full footer padding on desktop */
   #footer{padding-bottom:36px}
+  
+  /* RSVP + Guestbook side by side on desktop */
+  .rsvp-gb-grid{
+    grid-template-columns:1fr 1fr;
+    gap:32px;
+  }
+  .rsvp-column, .gb-column{
+    padding:28px;
+  }
 }
 
 /* Large desktop */
@@ -2015,9 +2048,7 @@ select.form-input option{background:var(--forest)}
   <div class="n-links">
     <a class="n-a" href="#stream" onclick="switchTab('stream')">Live Stream</a>
     <a class="n-a" href="#about" onclick="switchTab('about')">The Couple</a>
-    <a class="n-a" href="#programme" onclick="switchTab('programme')">Programme</a>
-    <a class="n-a" href="#rsvp" onclick="switchTab('rsvp')">RSVP</a>
-    <a class="n-a" href="#guestbook" onclick="switchTab('guestbook')">Guest Book</a>
+    <a class="n-a" href="#rsvp" onclick="switchTab('rsvp')">RSVP & Guest Book</a>
     <button class="n-live" onclick="switchTab('stream')"><span class="ldot"></span> Watch Live</button>
   </div>
   <button class="n-toggle" onclick="toggleNav()">&#9776;</button>
@@ -2027,9 +2058,7 @@ select.form-input option{background:var(--forest)}
 <div class="n-drawer" id="navDrawer">
   <a class="n-a" href="#" onclick="switchTab('stream');closeNav()">Live Stream</a>
   <a class="n-a" href="#" onclick="switchTab('about');closeNav()">The Couple</a>
-  <a class="n-a" href="#" onclick="switchTab('programme');closeNav()">Programme</a>
-  <a class="n-a" href="#" onclick="switchTab('rsvp');closeNav()">RSVP</a>
-  <a class="n-a" href="#" onclick="switchTab('guestbook');closeNav()">Guest Book</a>
+  <a class="n-a" href="#" onclick="switchTab('rsvp');closeNav()">RSVP & Guest Book</a>
   <a class="n-a" href="#" onclick="switchTab('info');closeNav()">Info</a>
 </div>
 
@@ -2108,7 +2137,7 @@ select.form-input option{background:var(--forest)}
             <div class="overlay-icon">&#127881;</div>
             <div class="overlay-heading">Alhamdulillah!</div>
             <p class="overlay-text">The ceremony has concluded. May Allah bless this beautiful union with endless love, mercy, and barakah.</p>
-            <button class="btn btn-gold btn-sm" onclick="switchTab('guestbook')">Leave a Message</button>
+            <button class="btn btn-gold btn-sm" onclick="switchTab('rsvp')">Leave a Message</button>
           </div>
           
           <!-- YouTube fallback overlay (for Error 150/153) -->
@@ -2180,12 +2209,6 @@ select.form-input option{background:var(--forest)}
           </div>
         </div>
         
-        <!-- Programme card -->
-        <div class="s-card">
-          <div class="s-card-hd"><span class="s-card-icon">&#128197;</span><span class="s-card-title">Today's Schedule</span></div>
-          <div class="s-card-body" id="sidebarProg"></div>
-        </div>
-        
         <!-- Live chat card -->
         <div class="s-card">
           <div class="s-card-hd"><span class="s-card-icon">&#128172;</span><span class="s-card-title">Live Chat</span></div>
@@ -2244,72 +2267,17 @@ select.form-input option{background:var(--forest)}
   </div>
 </div>
 
-<!-- PROGRAMME SECTION -->
-<section id="programme" class="tab-panel">
-  <div class="container">
-    <p class="sec-label">Order of Events</p>
-    <h2 class="sec-title">Wedding Programme</h2>
-    <p class="sec-sub">Sunday, 19 April 2026 &middot; All times in WAT (UTC+1)</p>
-    <div class="ornament"><div class="o-gem"></div></div>
-    
-    <div class="tl-grid">
-      <div class="tl">
-        <div class="tl-item">
-          <p class="tl-time">10:00 AM</p>
-          <h4 class="tl-name">Guest Arrival & Registration</h4>
-          <p class="tl-desc">Physical guests are welcomed and seated. Virtual guests join the live stream.</p>
-        </div>
-        <div class="tl-item">
-          <p class="tl-time">11:00 AM</p>
-          <h4 class="tl-name">&#128154; Engagement Ceremony</h4>
-          <p class="tl-desc">The joyful engagement celebration begins with gifts and cultural traditions.</p>
-          <span class="tl-badge">&#127881; Celebration</span>
-        </div>
-        <div class="tl-item">
-          <p class="tl-time">12:00 PM</p>
-          <h4 class="tl-name">Refreshments & Fellowship</h4>
-          <p class="tl-desc">A delightful spread of food and drinks for all guests.</p>
-        </div>
-        <div class="tl-item">
-          <p class="tl-time">1:00 PM</p>
-          <h4 class="tl-name">&#128141; Nikkah Ceremony</h4>
-          <p class="tl-desc">The sacred Islamic marriage contract is officiated.</p>
-          <span class="tl-badge">&#10024; Main Event</span>
-        </div>
-      </div>
-      
-      <div class="tl">
-        <div class="tl-item">
-          <p class="tl-time">2:00 PM</p>
-          <h4 class="tl-name">&#127926; Reception & Performance</h4>
-          <p class="tl-desc">Live entertainment, music, and joyful celebration.</p>
-          <span class="tl-badge">&#127881; Celebration</span>
-        </div>
-        <div class="tl-item">
-          <p class="tl-time">4:00 PM</p>
-          <h4 class="tl-name">&#129310; Thanksgiving & Gifting</h4>
-          <p class="tl-desc">Heartfelt thanksgiving and gifting ceremony.</p>
-        </div>
-        <div class="tl-item">
-          <p class="tl-time">5:00 PM</p>
-          <h4 class="tl-name">Closure</h4>
-          <p class="tl-desc">Closing du'a for the newlyweds. JazakAllahu khairan!</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- RSVP SECTION -->
+<!-- RSVP & GUESTBOOK SECTION - Combined for desktop -->
 <section id="rsvp" class="tab-panel">
   <div class="container">
-    <p class="sec-label">RSVP</p>
-    <h2 class="sec-title">Will You Be Joining Us?</h2>
-    <p class="sec-sub">Let us know you're coming — physically or virtually.</p>
-    <div class="ornament"><div class="o-gem"></div></div>
-    
-    <div class="rsvp-grid">
-      <div>
+    <div class="rsvp-gb-grid">
+      <!-- RSVP Column -->
+      <div class="rsvp-column">
+        <p class="sec-label">RSVP</p>
+        <h2 class="sec-title">Will You Be Joining Us?</h2>
+        <p class="sec-sub">Let us know you're coming — physically or virtually.</p>
+        <div class="ornament"><div class="o-gem"></div></div>
+        
         <div class="rsvp-stats">
           <div class="rs-cell"><span class="rs-n" id="rsvpPhysical">—</span><span class="rs-l">In Person</span></div>
           <div class="rs-cell"><span class="rs-n" id="rsvpVirtual">—</span><span class="rs-l">Virtual</span></div>
@@ -2328,76 +2296,70 @@ select.form-input option{background:var(--forest)}
             <a href="https://wa.me/2347060957637" class="wa-link" target="_blank">Groom</a>
           </p>
         </div>
-      </div>
-      
-      <div class="rsvp-card" id="rsvpFormWrap">
-        <div class="form-group">
-          <label>Your Full Name *</label>
-          <input type="text" id="rsvpName" class="form-input" placeholder="e.g. Fatima Adeyemi" maxlength="80">
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Email</label><input type="email" id="rsvpEmail" class="form-input" placeholder="your@email.com"></div>
-          <div class="form-group"><label>Phone (WhatsApp)</label><input type="tel" id="rsvpPhone" class="form-input" placeholder="+234..."></div>
-        </div>
-        <div class="form-group">
-          <label>I will be attending *</label>
-          <div class="attend-opts">
-            <div class="a-opt"><input type="radio" name="attend" id="aPhysical" value="physical"><label for="aPhysical"><span>&#127983;</span><span>In Person</span></label></div>
-            <div class="a-opt"><input type="radio" name="attend" id="aVirtual" value="virtual" checked><label for="aVirtual"><span>&#128187;</span><span>Virtually</span></label></div>
-            <div class="a-opt"><input type="radio" name="attend" id="aRegrets" value="regrets"><label for="aRegrets"><span>&#128140;</span><span>Regrets</span></label></div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Party Size</label><input type="number" id="rsvpParty" class="form-input" value="1" min="1" max="15"></div>
-          <div class="form-group"><label>Dietary Notes</label><input type="text" id="rsvpDiet" class="form-input" placeholder="Halal, Vegetarian..."></div>
-        </div>
-        <div class="form-group"><label>Message for the Couple</label><textarea id="rsvpMsg" class="form-input" placeholder="A warm message..."></textarea></div>
         
-        <button class="btn btn-gold rsvp-submit" id="rsvpBtn" onclick="submitRSVP(this)">
-          <span class="sp"></span><span class="bt">&#128140; Submit RSVP</span>
-        </button>
+        <div class="rsvp-card" id="rsvpFormWrap">
+          <div class="form-group">
+            <label>Your Full Name *</label>
+            <input type="text" id="rsvpName" class="form-input" placeholder="e.g. Fatima Adeyemi" maxlength="80">
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Email</label><input type="email" id="rsvpEmail" class="form-input" placeholder="your@email.com"></div>
+            <div class="form-group"><label>Phone (WhatsApp)</label><input type="tel" id="rsvpPhone" class="form-input" placeholder="+234..."></div>
+          </div>
+          <div class="form-group">
+            <label>I will be attending *</label>
+            <div class="attend-opts">
+              <div class="a-opt"><input type="radio" name="attend" id="aPhysical" value="physical"><label for="aPhysical"><span>&#127983;</span><span>In Person</span></label></div>
+              <div class="a-opt"><input type="radio" name="attend" id="aVirtual" value="virtual" checked><label for="aVirtual"><span>&#128187;</span><span>Virtually</span></label></div>
+              <div class="a-opt"><input type="radio" name="attend" id="aRegrets" value="regrets"><label for="aRegrets"><span>&#128140;</span><span>Regrets</span></label></div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Party Size</label><input type="number" id="rsvpParty" class="form-input" value="1" min="1" max="15"></div>
+            <div class="form-group"><label>Dietary Notes</label><input type="text" id="rsvpDiet" class="form-input" placeholder="Halal, Vegetarian..."></div>
+          </div>
+          <div class="form-group"><label>Message for the Couple</label><textarea id="rsvpMsg" class="form-input" placeholder="A warm message..."></textarea></div>
+          
+          <button class="btn btn-gold rsvp-submit" id="rsvpBtn" onclick="submitRSVP(this)">
+            <span class="sp"></span><span class="bt">&#128140; Submit RSVP</span>
+          </button>
+        </div>
+        
+        <div class="success-box" id="rsvpSuccess">
+          <div class="success-icon">&#127881;</div>
+          <div class="success-title">RSVP Received!</div>
+          <p class="success-msg">JazakAllahu khairan! Your RSVP has been recorded. We look forward to celebrating with you!</p>
+        </div>
       </div>
       
-      <div class="success-box" id="rsvpSuccess">
-        <div class="success-icon">&#127881;</div>
-        <div class="success-title">RSVP Received!</div>
-        <p class="success-msg">JazakAllahu khairan! Your RSVP has been recorded. We look forward to celebrating with you!</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- GUESTBOOK SECTION -->
-<section id="guestbook" class="tab-panel">
-  <div class="container">
-    <p class="sec-label">Guest Book</p>
-    <h2 class="sec-title">Leave Your Wishes</h2>
-    <p class="sec-sub">Share your blessings and congratulations with the happy couple.</p>
-    <div class="ornament"><div class="o-gem"></div></div>
-    
-    <div class="gb-grid">
-      <div class="gb-form-wrap">
-        <div class="form-group"><label>Your Name *</label><input type="text" id="gbName" class="form-input" placeholder="Your name" maxlength="80"></div>
-        <div class="form-row">
-          <div class="form-group"><label>Email</label><input type="email" id="gbEmail" class="form-input" placeholder="your@email.com"></div>
-          <div class="form-group"><label>Location</label><input type="text" id="gbLoc" class="form-input" placeholder="City, Country"></div>
+      <!-- Guestbook Column -->
+      <div class="gb-column" id="guestbook">
+        <p class="sec-label">Guest Book</p>
+        <h2 class="sec-title">Leave Your Wishes</h2>
+        <p class="sec-sub">Share your blessings and congratulations with the happy couple.</p>
+        <div class="ornament"><div class="o-gem"></div></div>
+        
+        <div class="gb-form-wrap">
+          <div class="form-group"><label>Your Name *</label><input type="text" id="gbName" class="form-input" placeholder="Your name" maxlength="80"></div>
+          <div class="form-row">
+            <div class="form-group"><label>Email</label><input type="email" id="gbEmail" class="form-input" placeholder="your@email.com"></div>
+            <div class="form-group"><label>Location</label><input type="text" id="gbLoc" class="form-input" placeholder="City, Country"></div>
+          </div>
+          <div class="form-group"><label>Your Relationship</label>
+            <select id="gbRel" class="form-input">
+              <option value="Friend">Friend</option>
+              <option value="Family">Family</option>
+              <option value="Colleague">Colleague</option>
+              <option value="Guest">Guest</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Your Message *</label><textarea id="gbMsg" class="form-input" placeholder="Write your wishes for the couple..." maxlength="600"></textarea></div>
+          <button class="btn btn-gold" onclick="submitGB(this)" style="width:100%">
+            <span class="sp"></span><span class="bt">&#9997; Submit Message</span>
+          </button>
         </div>
-        <div class="form-group"><label>Your Relationship</label>
-          <select id="gbRel" class="form-input">
-            <option value="Friend">Friend</option>
-            <option value="Family">Family</option>
-            <option value="Colleague">Colleague</option>
-            <option value="Guest">Guest</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Your Message *</label><textarea id="gbMsg" class="form-input" placeholder="Write your wishes for the couple..." maxlength="600"></textarea></div>
-        <button class="btn btn-gold" onclick="submitGB(this)" style="width:100%">
-          <span class="sp"></span><span class="bt">&#9997; Submit Message</span>
-        </button>
-      </div>
-      
-      <div>
+        
         <div class="gb-entries-hd">
           <span>Messages</span>
           <span class="gb-count" id="gbCountLabel">0 messages</span>
@@ -2476,9 +2438,8 @@ select.form-input option{background:var(--forest)}
   <nav class="ft-nav">
     <a class="ft-a" href="#" onclick="switchTab('stream');return false">Live Stream</a>
     <a class="ft-a" href="#" onclick="switchTab('about');return false">The Couple</a>
-    <a class="ft-a" href="#" onclick="switchTab('programme');return false">Programme</a>
-    <a class="ft-a" href="#" onclick="switchTab('rsvp');return false">RSVP</a>
-    <a class="ft-a" href="#" onclick="switchTab('guestbook');return false">Guest Book</a>
+    <a class="ft-a" href="#" onclick="switchTab('rsvp');return false">RSVP & Guest Book</a>
+    <a class="ft-a" href="#" onclick="switchTab('info');return false">Info</a>
   </nav>
   <p class="ft-copy">Made with love &middot; Hawau &amp; Lukman 2026</p>
 </footer>
@@ -2501,10 +2462,6 @@ select.form-input option{background:var(--forest)}
   <button class="tab-btn" data-tab="rsvp" onclick="switchTab('rsvp')">
     <span class="tab-icon">&#128140;</span>
     <span class="tab-label">RSVP</span>
-  </button>
-  <button class="tab-btn" data-tab="guestbook" onclick="switchTab('guestbook')">
-    <span class="tab-icon">&#9997;</span>
-    <span class="tab-label">Guestbook</span>
   </button>
   <button class="tab-btn" data-tab="info" onclick="switchTab('info')">
     <span class="tab-icon">&#8505;</span>
