@@ -657,6 +657,66 @@ section{
   overflow:hidden;
 }
 
+/* Mobile Fake Fullscreen Mode */
+.vstage.fake-fullscreen{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:9999 !important;
+  width:100vw !important;
+  height:100vh !important;
+  aspect-ratio:unset !important;
+  max-width:none !important;
+}
+.vstage.fake-fullscreen #youtubeIframe,
+.vstage.fake-fullscreen #meetIframe{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+}
+.vstage.fake-fullscreen .pre-overlay,
+.vstage.fake-fullscreen .ended-overlay,
+.vstage.fake-fullscreen .stream-fallback,
+.vstage.fake-fullscreen .join-external{
+  aspect-ratio:unset;
+  height:100%;
+}
+
+/* Fullscreen Collapse Button */
+.fs-collapse-btn{
+  display:none;
+  position:absolute;
+  top:12px;
+  right:12px;
+  z-index:20;
+  background:rgba(0,0,0,.75);
+  border:1px solid rgba(255,255,255,.2);
+  color:#fff;
+  padding:10px 16px;
+  font-size:.75rem;
+  font-family:'Cinzel',serif;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  border-radius:6px;
+  cursor:pointer;
+  transition:all .2s;
+  align-items:center;
+  gap:6px;
+}
+.fs-collapse-btn:hover{
+  background:rgba(0,0,0,.9);
+  border-color:var(--teal3);
+}
+.vstage.fake-fullscreen .fs-collapse-btn{
+  display:flex;
+}
+/* Also show in native fullscreen */
+.vstage:-webkit-full-screen .fs-collapse-btn,
+.vstage:-moz-full-screen .fs-collapse-btn,
+.vstage:fullscreen .fs-collapse-btn{
+  display:flex;
+}
+
 /* Pre-stream overlay */
 .pre-overlay{
   position:absolute;
@@ -2124,6 +2184,11 @@ select.form-input option{background:var(--forest)}
         </div>
         
         <div class="vstage" id="vstage">
+          <!-- Collapse Button (shown in fullscreen mode) -->
+          <button class="fs-collapse-btn" id="fsCollapseBtn" onclick="exitFullscreen()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+            Collapse
+          </button>
           <!-- Pre-stream overlay -->
           <div class="pre-overlay" id="preOverlay">
             <div class="pre-icon">&#128141;</div>
@@ -2936,16 +3001,119 @@ function updateStatusBadge(s) {
 }
 
 /* ============================================
-   FULLSCREEN
+   FULLSCREEN (Works on Mobile & Desktop)
    ============================================ */
+let isFakeFullscreen = false;
+
 function toggleFullscreen() {
   const stage = document.getElementById('vstage');
-  if (document.fullscreenElement) {
-    document.exitFullscreen();
+  
+  // Check if already in fake fullscreen
+  if (isFakeFullscreen) {
+    exitFullscreen();
+    return;
+  }
+  
+  // Check if already in native fullscreen
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+    return;
+  }
+  
+  // Try native fullscreen first (works on desktop & Android)
+  if (stage.requestFullscreen) {
+    stage.requestFullscreen().catch(() => {
+      // Native fullscreen failed, use fake fullscreen
+      enterFakeFullscreen();
+    });
+  } else if (stage.webkitRequestFullscreen) {
+    // Safari/Chrome iOS
+    stage.webkitRequestFullscreen();
+  } else if (stage.webkitEnterFullscreen) {
+    // Older iOS
+    stage.webkitEnterFullscreen();
   } else {
-    stage.requestFullscreen?.() || stage.webkitRequestFullscreen?.();
+    // Fallback to fake fullscreen (iOS Safari, etc.)
+    enterFakeFullscreen();
   }
 }
+
+function enterFakeFullscreen() {
+  const stage = document.getElementById('vstage');
+  const nav = document.getElementById('nav');
+  const tabBar = document.getElementById('mobileTabBar');
+  
+  stage.classList.add('fake-fullscreen');
+  if (nav) nav.style.display = 'none';
+  if (tabBar) tabBar.style.display = 'none';
+  document.body.style.overflow = 'hidden';
+  isFakeFullscreen = true;
+  
+  // Update button text
+  const btn = document.querySelector('[onclick="toggleFullscreen()"]');
+  if (btn) btn.innerHTML = '&#9881; Exit Fullscreen';
+}
+
+function exitFullscreen() {
+  const stage = document.getElementById('vstage');
+  const nav = document.getElementById('nav');
+  const tabBar = document.getElementById('mobileTabBar');
+  
+  // Exit fake fullscreen
+  if (isFakeFullscreen) {
+    stage.classList.remove('fake-fullscreen');
+    if (nav) nav.style.display = '';
+    if (tabBar) tabBar.style.display = '';
+    document.body.style.overflow = '';
+    isFakeFullscreen = false;
+    
+    // Update button text
+    const btn = document.querySelector('[onclick="toggleFullscreen()"]');
+    if (btn) btn.innerHTML = '&#9974; Fullscreen';
+    return;
+  }
+  
+  // Exit native fullscreen
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  } else if (document.webkitFullscreenElement) {
+    document.webkitExitFullscreen();
+  }
+  
+  // Update button text
+  const btn = document.querySelector('[onclick="toggleFullscreen()"]');
+  if (btn) btn.innerHTML = '&#9974; Fullscreen';
+}
+
+// Listen for native fullscreen changes
+document.addEventListener('fullscreenchange', () => {
+  const btn = document.querySelector('[onclick="toggleFullscreen()"]');
+  if (document.fullscreenElement) {
+    if (btn) btn.innerHTML = '&#9881; Exit Fullscreen';
+  } else {
+    if (btn) btn.innerHTML = '&#9974; Fullscreen';
+  }
+});
+
+document.addEventListener('webkitfullscreenchange', () => {
+  const btn = document.querySelector('[onclick="toggleFullscreen()"]');
+  if (document.webkitFullscreenElement) {
+    if (btn) btn.innerHTML = '&#9881; Exit Fullscreen';
+  } else {
+    if (btn) btn.innerHTML = '&#9974; Fullscreen';
+  }
+});
+
+// ESC key to exit fake fullscreen
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isFakeFullscreen) {
+    exitFullscreen();
+  }
+});
 
 /* ============================================
    VIEWERS
