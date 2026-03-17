@@ -2176,9 +2176,9 @@ select.form-input option{background:var(--forest)}
             <button class="pc-btn" onclick="shareLink()">&#128279; Share</button>
           </div>
           <div class="pc-right">
-            <span class="viewers-pill">
-              <span class="vp-dot"></span>
-              <span id="viewerCount" aria-live="polite">0</span> watching
+            <span class="viewers-pill" id="viewersPill">
+              <span class="vp-dot" id="viewerDot"></span>
+              <span id="viewerCount" aria-live="polite">—</span> <span id="viewerLabel">available on event day</span>
             </span>
           </div>
         </div>
@@ -2203,8 +2203,9 @@ select.form-input option{background:var(--forest)}
         <div class="s-card">
           <div class="s-card-hd"><span class="s-card-icon">&#128101;</span><span class="s-card-title">Virtual Guests</span></div>
           <div class="s-card-body">
-            <div class="vw-big" id="sideViewerCount">0</div>
+            <div class="vw-big" id="sideViewerCount">—</div>
             <div class="vw-lbl">Online Now</div>
+            <div class="vw-lbl" id="viewerWaitMsg" style="font-size:0.55rem;color:var(--teal3);margin-top:4px;">Available on event day</div>
             <div class="vw-list" id="viewerList"></div>
           </div>
         </div>
@@ -2950,12 +2951,37 @@ function toggleFullscreen() {
    VIEWERS
    ============================================ */
 function updateViewerUI(n) {
-  document.getElementById('viewerCount').textContent = n;
+  const now = new Date();
+  const eventStarted = now >= WEDDING;
+  
+  const viewerCount = document.getElementById('viewerCount');
   const sideCount = document.getElementById('sideViewerCount');
-  if (sideCount) sideCount.textContent = n;
+  const viewerLabel = document.getElementById('viewerLabel');
+  const viewerDot = document.getElementById('viewerDot');
+  const viewerWaitMsg = document.getElementById('viewerWaitMsg');
+  
+  if (eventStarted) {
+    // Event has started - show actual count
+    if (viewerCount) viewerCount.textContent = n;
+    if (sideCount) sideCount.textContent = n;
+    if (viewerLabel) viewerLabel.textContent = 'watching';
+    if (viewerDot) viewerDot.style.background = '#4caf50';
+    if (viewerWaitMsg) viewerWaitMsg.style.display = 'none';
+  } else {
+    // Event hasn't started yet - show waiting message
+    if (viewerCount) viewerCount.textContent = '—';
+    if (sideCount) sideCount.textContent = '—';
+    if (viewerLabel) viewerLabel.textContent = 'available on event day';
+    if (viewerDot) viewerDot.style.background = 'var(--teal2)';
+    if (viewerWaitMsg) viewerWaitMsg.style.display = 'block';
+  }
 }
 
 function addViewer(name) {
+  // Only show viewers after event starts
+  const now = new Date();
+  if (now < WEDDING) return;
+  
   const l = document.getElementById('viewerList');
   if (!l) return;
   const el = document.createElement('div');
