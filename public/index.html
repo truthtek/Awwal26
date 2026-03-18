@@ -2238,11 +2238,37 @@ select.form-input option{background:var(--forest)}
 }
 
 /* Desktop/Mobile visibility helpers */
+/* For non-tab-panel elements */
 .desktop-only{display:none!important}
 .mobile-only{display:block!important}
+
+/* For tab-panel elements: respect tab visibility, then apply screen-size visibility */
+.tab-panel.mobile-only,
+.tab-panel.desktop-only{
+  display:none !important;
+}
+.tab-panel.mobile-only.active{
+  display:block !important;
+}
+.tab-panel.desktop-only.active{
+  display:none !important; /* Desktop-only tabs still hidden on mobile even when active */
+}
+
 @media(min-width:901px){
   .desktop-only{display:block!important}
   .mobile-only{display:none!important}
+  
+  /* On desktop: mobile-only tabs hidden, desktop-only tabs show when active */
+  .tab-panel.mobile-only,
+  .tab-panel.mobile-only.active{
+    display:none !important;
+  }
+  .tab-panel.desktop-only{
+    display:none !important;
+  }
+  .tab-panel.desktop-only.active{
+    display:block !important;
+  }
 }
 
 /* Gift Section Styles */
