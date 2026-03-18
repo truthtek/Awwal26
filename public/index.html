@@ -2258,6 +2258,11 @@ select.form-input option{background:var(--forest)}
   .desktop-only{display:block!important}
   .mobile-only{display:none!important}
   
+  /* Preserve grid display for info-grid on desktop */
+  .info-grid.desktop-only{
+    display:grid!important;
+  }
+  
   /* On desktop: mobile-only tabs hidden, desktop-only tabs show when active */
   .tab-panel.mobile-only,
   .tab-panel.mobile-only.active{
@@ -2371,11 +2376,11 @@ select.form-input option{background:var(--forest)}
   section{padding:80px 0}
   .sec-title{font-size:clamp(2.4rem,5vw,3.2rem)}
   
-  /* Info grid: 3 columns x 2 rows on desktop */
+  /* Info grid: 2 columns x 3 rows on desktop */
   .info-grid{
-    grid-template-columns:repeat(3,1fr);
+    grid-template-columns:repeat(2,1fr);
     gap:20px;
-    max-width:1100px;
+    max-width:900px;
     margin:0 auto;
   }
   .info-grid .ic{
