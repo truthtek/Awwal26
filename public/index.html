@@ -3143,8 +3143,12 @@ const PROG = [
 let currentTab = 'hero';
 
 function switchTab(tabId) {
-  // Map 'info' to 'info-section'
-  const sectionId = tabId === 'info' ? 'info-section' : tabId;
+  // Map tab IDs to section IDs
+  const tabToSection = {
+    'info': 'info-section',
+    'stream': 'main-content'
+  };
+  const sectionId = tabToSection[tabId] || tabId;
   
   // Update tab buttons with ARIA
   document.querySelectorAll('.tab-btn').forEach(btn => {
