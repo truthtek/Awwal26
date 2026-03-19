@@ -2741,6 +2741,15 @@ select.form-input option{background:var(--forest)}
               <div class="a-opt"><input type="radio" name="attend" id="aRegrets" value="regrets" onchange="toggleConditionalFields()"><label for="aRegrets"><span>&#128140;</span><span>Regrets</span></label></div>
             </div>
           </div>
+          <div class="form-group">
+            <label>Whose Guest Are You? *</label>
+            <select id="rsvpGuestOf" class="form-input" required>
+              <option value="" disabled selected>Select...</option>
+              <option value="bride">Bride's Guest (Hawau)</option>
+              <option value="groom">Groom's Guest (Lukman)</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
           <div class="form-row">
             <div class="form-group" id="partySizeField"><label>Party Size</label><input type="number" id="rsvpParty" class="form-input" value="1" min="1" max="15"></div>
             <div class="form-group form-field-conditional" id="dietaryField"><label>Dietary Notes <span style="color:var(--muted);font-size:.7rem">(In-Person)</span></label><input type="text" id="rsvpDiet" class="form-input" placeholder="Halal, Vegetarian..."></div>
@@ -3926,9 +3935,11 @@ loadRSVPStats();
 async function submitRSVP(btn) {
   const name = document.getElementById('rsvpName').value.trim();
   const attend = document.querySelector('input[name="attend"]:checked')?.value;
+  const guestOf = document.getElementById('rsvpGuestOf').value;
   
   if (!name) { shake('rsvpName'); return toast('⚠️ Please enter your full name'); }
   if (!attend) { toast('⚠️ Please select how you will attend'); return; }
+  if (!guestOf) { shake('rsvpGuestOf'); return toast('⚠️ Please select whose guest you are'); }
   
   setLoad(btn, true);
   const r = await api('POST', '/api/rsvp', {
@@ -3936,6 +3947,7 @@ async function submitRSVP(btn) {
     email: document.getElementById('rsvpEmail').value.trim(),
     phone: document.getElementById('rsvpPhone').value.trim(),
     attendance: attend,
+    guest_of: guestOf,
     party_size: +document.getElementById('rsvpParty').value || 1,
     dietary: document.getElementById('rsvpDiet').value.trim(),
     message: document.getElementById('rsvpMsg').value.trim()

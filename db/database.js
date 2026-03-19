@@ -39,6 +39,7 @@ db.exec(`
     email      TEXT,
     phone      TEXT,
     attendance TEXT NOT NULL,
+    guest_of   TEXT,
     party_size INTEGER DEFAULT 1,
     dietary    TEXT,
     message    TEXT,
@@ -73,6 +74,18 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
+
+// Migration: Add guest_of column to existing rsvp table if it doesn't exist
+try {
+  const columns = db.prepare("PRAGMA table_info(rsvp)").all();
+  const hasGuestOf = columns.some(col => col.name === 'guest_of');
+  if (!hasGuestOf) {
+    db.exec('ALTER TABLE rsvp ADD COLUMN guest_of TEXT');
+    console.log('Migration: Added guest_of column to rsvp table');
+  }
+} catch (err) {
+  console.log('Migration check:', err.message);
+}
 
 // Seed defaults
 const seedSettings = [
@@ -112,7 +125,7 @@ const Q = {
   gbResetAll: ()           => db.prepare('DELETE FROM guestbook').run(),
 
   // RSVP
-  rsvpAdd:   (n,e,p,att,sz,diet,msg) => db.prepare('INSERT INTO rsvp(name,email,phone,attendance,party_size,dietary,message) VALUES(?,?,?,?,?,?,?)').run(n,e,p,att,sz,diet,msg),
+  rsvpAdd:   (n,e,p,att,guest,sz,diet,msg) => db.prepare('INSERT INTO rsvp(name,email,phone,attendance,guest_of,party_size,dietary,message) VALUES(?,?,?,?,?,?,?,?)').run(n,e,p,att,guest,sz,diet,msg),
   rsvpAll:   ()  => db.prepare('SELECT * FROM rsvp ORDER BY created_at DESC').all(),
   rsvpStats: ()  => db.prepare("SELECT attendance, COUNT(*) as cnt, SUM(party_size) as ppl FROM rsvp GROUP BY attendance").all(),
   rsvpCount: ()  => db.prepare('SELECT COUNT(*) as n FROM rsvp').get().n,

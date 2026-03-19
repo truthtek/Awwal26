@@ -165,7 +165,7 @@ app.post('/api/guestbook', postLimit, (req, res) => {
   res.json({ ok: true, entry });
 });
 app.post('/api/rsvp', postLimit, (req, res) => {
-  const { name, email='', phone='', attendance, party_size=1, dietary='', message='' } = req.body;
+  const { name, email='', phone='', attendance, guest_of='', party_size=1, dietary='', message='' } = req.body;
 
   if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
   if (!attendance || !['physical','virtual','regrets'].includes(attendance))
@@ -175,6 +175,7 @@ app.post('/api/rsvp', postLimit, (req, res) => {
   const cleanName = sanitize(name.trim());
   const cleanEmail = email ? sanitize(email.trim()) : null;
   const cleanPhone = phone ? sanitize(phone.trim()) : null;
+  const cleanGuestOf = guest_of ? sanitize(guest_of) : null;
   const cleanDietary = dietary ? sanitize(dietary) : null;
   const cleanMessage = message ? sanitize(message) : null;
 
@@ -184,7 +185,7 @@ app.post('/api/rsvp', postLimit, (req, res) => {
     return res.status(409).json({ error: 'An RSVP with this name already exists. If you need to update your RSVP, please contact us via WhatsApp.' });
   }
 
-  Q.rsvpAdd(cleanName, cleanEmail, cleanPhone, attendance, Math.min(20,+party_size||1), cleanDietary, cleanMessage);
+  Q.rsvpAdd(cleanName, cleanEmail, cleanPhone, attendance, cleanGuestOf, Math.min(20,+party_size||1), cleanDietary, cleanMessage);
   io.emit('rsvp:new', {});
   res.json({ ok: true });
 });
