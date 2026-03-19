@@ -124,6 +124,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .b-virt{background:rgba(61,212,200,.1);color:var(--teal3);border:1px solid rgba(61,212,200,.18)}
 .b-phys{background:rgba(196,158,80,.1);color:var(--gold3);border:1px solid rgba(196,158,80,.18)}
 .b-reg{background:rgba(150,150,150,.08);color:var(--muted);border:1px solid rgba(150,150,150,.15)}
+.b-bride{background:rgba(255,105,180,.12);color:#ffb6c1;border:1px solid rgba(255,105,180,.25)}
+.b-groom{background:rgba(100,149,237,.12);color:#87ceeb;border:1px solid rgba(100,149,237,.25)}
+.b-both{background:rgba(180,140,60,.12);color:var(--gold3);border:1px solid rgba(180,140,60,.25)}
 .msg-p{font-size:.82rem;color:var(--muted);font-style:italic;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rbar{display:flex;align-items:center;gap:10px;margin-bottom:9px}
 .rbar-emoji{font-size:1.2rem;width:26px;text-align:center}
@@ -286,7 +289,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
             <div style="display:flex;gap:6px"><button class="btn btn-r btn-sm" onclick="resetGuestList('rsvp')" type="button">&#128465; Reset All</button><button class="btn btn-o btn-sm" onclick="exportRsvp()" type="button">&#11015; Export CSV</button><button class="btn btn-o btn-sm" onclick="loadRsvp()" type="button">&#10227; Refresh</button></div>
           </div>
           <input class="tbl-search" id="rsvpQ" type="text" placeholder="Search by name, attendance, email..." oninput="filterTbl('rsvpTb',this.value)" aria-label="Search RSVPs">
-          <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Attendance</th><th>Party</th><th>Contact</th><th>Message</th><th>Date</th><th></th></tr></thead><tbody id="rsvpTb"></tbody></table></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Attendance</th><th>Guest Of</th><th>Party</th><th>Contact</th><th>Message</th><th>Date</th><th></th></tr></thead><tbody id="rsvpTb"></tbody></table></div>
           <div id="rsvpEmpty" class="empty-state" style="display:none"><div class="empty-state-icon">&#128140;</div><div class="empty-state-text">No RSVPs received yet</div></div>
         </div>
       </div>
@@ -599,7 +602,13 @@ function loadRsvp(){
     for(var j=0;j<r.rsvps.length;j++){
       var e=r.rsvps[j],tr=document.createElement('tr');
       var bc=e.attendance==='physical'?'phys':e.attendance==='virtual'?'virt':'reg';
-      tr.innerHTML='<td><strong>'+esc(e.name)+'</strong></td><td><span class="badge b-'+bc+'">'+esc(e.attendance)+'</span></td><td style="font-size:.78rem;color:var(--muted)">'+(e.party_size||1)+'</td><td style="font-size:.74rem;color:var(--muted)">'+esc(e.email||'\u2014')+(e.phone?'<br>'+esc(e.phone):'')+'</td><td class="msg-p" title="'+esc(e.message||'')+'">'+esc(e.message||'\u2014')+'</td><td style="font-size:.68rem;color:var(--muted);white-space:nowrap">'+fmt(e.created_at)+'</td><td><button class="btn btn-r btn-sm" onclick="delRsvp('+e.id+')" type="button">&times;</button></td>';
+      var guestOf=e.guest_of||'';
+      var guestBadge='';
+      if(guestOf==='bride')guestBadge='<span class="badge b-bride">Bride</span>';
+      else if(guestOf==='groom')guestBadge='<span class="badge b-groom">Groom</span>';
+      else if(guestOf==='both')guestBadge='<span class="badge b-both">Both</span>';
+      else guestBadge='<span style="color:var(--muted)">—</span>';
+      tr.innerHTML='<td><strong>'+esc(e.name)+'</strong></td><td><span class="badge b-'+bc+'">'+esc(e.attendance)+'</span></td><td>'+guestBadge+'</td><td style="font-size:.78rem;color:var(--muted)">'+(e.party_size||1)+'</td><td style="font-size:.74rem;color:var(--muted)">'+esc(e.email||'\u2014')+(e.phone?'<br>'+esc(e.phone):'')+'</td><td class="msg-p" title="'+esc(e.message||'')+'">'+esc(e.message||'\u2014')+'</td><td style="font-size:.68rem;color:var(--muted);white-space:nowrap">'+fmt(e.created_at)+'</td><td><button class="btn btn-r btn-sm" onclick="delRsvp('+e.id+')" type="button">&times;</button></td>';
       tb.appendChild(tr);
     }
   });
@@ -610,8 +619,8 @@ function delRsvp(id){if(!confirm('Delete this RSVP?'))return;api('DELETE','/admi
 function exportRsvp(){
   api('GET','/admin/rsvp').then(function(r){
     if(!r||!r.rsvps)return;
-    var rows=[['Name','Email','Phone','Attendance','Party Size','Dietary','Message','Date']];
-    for(var i=0;i<r.rsvps.length;i++){var e=r.rsvps[i];rows.push([e.name,e.email||'',e.phone||'',e.attendance,e.party_size||1,e.dietary||'',e.message||'',e.created_at]);}
+    var rows=[['Name','Email','Phone','Attendance','Guest Of','Party Size','Dietary','Message','Date']];
+    for(var i=0;i<r.rsvps.length;i++){var e=r.rsvps[i];rows.push([e.name,e.email||'',e.phone||'',e.attendance,e.guest_of||'',e.party_size||1,e.dietary||'',e.message||'',e.created_at]);}
     csvDl(rows,'rsvp_export_'+new Date().toISOString().slice(0,10)+'.csv');toast('&#9989; RSVP data exported');
   });
 }
