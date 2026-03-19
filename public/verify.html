@@ -67,7 +67,11 @@
     
     .input-group{margin-bottom:16px}
     .input-group label{display:block;font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-    .input-group input{width:100%;background:rgba(0,0,0,.4);border:1px solid var(--border);color:var(--text);padding:14px 16px;font-size:1rem;outline:none;border-radius:var(--r);transition:border-color var(--dur);text-transform:uppercase;letter-spacing:2px;text-align:center}
+    .barcode-input-wrapper{display:flex;align-items:stretch;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:border-color var(--dur)}
+    .barcode-input-wrapper:focus-within{border-color:var(--gold)}
+    .barcode-prefix{background:rgba(196,158,80,.15);color:var(--gold3);padding:14px 12px;font-size:1rem;font-family:monospace;letter-spacing:2px;font-weight:600;white-space:nowrap;display:flex;align-items:center}
+    .barcode-input-wrapper input{flex:1;background:transparent;border:none;color:var(--text);padding:14px 12px;font-size:1rem;outline:none;text-transform:uppercase;letter-spacing:2px;font-family:monospace}
+    .barcode-input-wrapper input::placeholder{text-transform:uppercase;letter-spacing:2px;color:var(--muted)}
     .input-group input:focus{border-color:var(--gold)}
     .input-group input::placeholder{text-transform:none;letter-spacing:normal}
     
@@ -167,7 +171,10 @@
       <div class="manual-section" id="manualSection">
         <div class="input-group">
           <label for="barcodeInput">Barcode Number</label>
-          <input type="text" id="barcodeInput" placeholder="HL2026-XXXXXXXX" maxlength="20" onkeydown="if(event.key==='Enter')verifyBarcode()">
+          <div class="barcode-input-wrapper">
+            <span class="barcode-prefix">HL2026-</span>
+            <input type="text" id="barcodeInput" placeholder="XXXXXXXX" maxlength="12" onkeydown="if(event.key==='Enter')verifyBarcode()" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+          </div>
         </div>
         <button class="btn btn-primary" id="verifyBtn" onclick="verifyBarcode()">
           <span id="btnText">Verify Guest</span>
@@ -229,7 +236,9 @@
         scannerSection.classList.remove('active');
         manualSection.classList.add('active');
         stopScanner();
-        document.getElementById('barcodeInput').focus();
+        var input = document.getElementById('barcodeInput');
+        input.focus();
+        input.select();
       }
     }
     
@@ -400,14 +409,26 @@
     }
     
     function verifyBarcode(scannedBarcode) {
-      var barcode = scannedBarcode || document.getElementById('barcodeInput').value.trim().toUpperCase();
+      var barcode;
+      if (scannedBarcode) {
+        barcode = scannedBarcode.trim().toUpperCase();
+      } else {
+        // Manual input - combine prefix with user input
+        var userInput = document.getElementById('barcodeInput').value.trim().toUpperCase();
+        // Remove any HL2026- prefix if user accidentally typed it
+        userInput = userInput.replace(/^HL2026-?/i, '');
+        barcode = 'HL2026-' + userInput;
+      }
+      
       var btn = document.getElementById('verifyBtn');
       var btnText = document.getElementById('btnText');
       var resultCard = document.getElementById('resultCard');
       
-      if (!barcode) {
+      // Check if user entered anything after the prefix
+      var barcodeSuffix = barcode.replace('HL2026-', '');
+      if (!scannedBarcode && !barcodeSuffix) {
         resultCard.className = 'result show';
-        resultCard.innerHTML = '<div class="error-msg">Please enter a barcode number</div>';
+        resultCard.innerHTML = '<div class="error-msg">Please enter the barcode suffix (characters after HL2026-)</div>';
         return;
       }
       
