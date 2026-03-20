@@ -341,21 +341,15 @@
     }
     
     function onScanSuccess(decodedText, decodedResult) {
-      // Show success overlay
-      var overlay = document.getElementById('scanSuccess');
-      overlay.classList.add('show');
+      console.log('Barcode scanned:', decodedText);
       
-      setTimeout(function() {
-        overlay.classList.remove('show');
-      }, 800);
-      
-      // Stop scanner temporarily
+      // Stop scanner immediately
       if (html5QrCode && isScanning) {
         html5QrCode.pause();
       }
       
-      // Process the barcode
-      verifyBarcode(decodedText);
+      // Process the barcode directly - don't show overlay yet
+      verifyBarcode(decodedText, true);
     }
     
     function onScanFailure(error) {
@@ -408,7 +402,7 @@
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
     
-    function verifyBarcode(scannedBarcode) {
+    function verifyBarcode(scannedBarcode, fromScanner) {
       var barcode;
       if (scannedBarcode) {
         barcode = scannedBarcode.trim().toUpperCase();
@@ -419,6 +413,8 @@
         userInput = userInput.replace(/^HL2026-?/i, '');
         barcode = 'HL2026-' + userInput;
       }
+      
+      console.log('Verifying barcode:', barcode);
       
       var btn = document.getElementById('verifyBtn');
       var btnText = document.getElementById('btnText');
@@ -432,13 +428,10 @@
         return;
       }
       
-      // Extract barcode if it contains HL2026-
-      var barcodeMatch = barcode.match(/HL2026-[A-F0-9]{6,12}/i);
-      if (barcodeMatch) {
-        barcode = barcodeMatch[0].toUpperCase();
-      } else if (!barcode.startsWith('HL2026-')) {
+      // Check if barcode starts with HL2026-
+      if (!barcode.startsWith('HL2026-')) {
         resultCard.className = 'result show';
-        resultCard.innerHTML = '<div class="error-msg">Invalid barcode format. Should contain HL2026-XXXXXX</div>';
+        resultCard.innerHTML = '<div class="error-msg">Invalid barcode format. Barcode must start with HL2026-</div>';
         resumeScanner();
         return;
       }
@@ -449,10 +442,20 @@
       fetch('/api/verify/' + encodeURIComponent(barcode))
         .then(function(r) { return r.json(); })
         .then(function(data) {
+          console.log('API response:', data);
           btn.disabled = false;
           btnText.textContent = 'Verify Guest';
           
           if (data.valid) {
+            // Show success overlay only after successful verification
+            if (fromScanner) {
+              var overlay = document.getElementById('scanSuccess');
+              overlay.classList.add('show');
+              setTimeout(function() {
+                overlay.classList.remove('show');
+              }, 1000);
+            }
+            
             var guest = data.guest;
             var attendanceClass = guest.attendance === 'physical' ? 'physical' : guest.attendance === 'virtual' ? 'virtual' : 'regrets';
             var attendanceText = guest.attendance === 'physical' ? 'In Person' : guest.attendance === 'virtual' ? 'Virtual' : 'Regrets';
@@ -499,6 +502,7 @@
           }
         })
         .catch(function(err) {
+          console.error('API error:', err);
           btn.disabled = false;
           btnText.textContent = 'Verify Guest';
           resultCard.className = 'result show';
