@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Import RSVP Data - Admin</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #0C1A0E; color: #FDFAF2; }
+    h1 { color: #EFC060; }
+    .card { background: rgba(0,0,0,.3); border: 1px solid rgba(196,158,80,.15); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    textarea { width: 100%; height: 300px; font-family: monospace; font-size: 12px; background: #0A1A0C; color: #FDFAF2; border: 1px solid rgba(196,158,80,.3); padding: 10px; border-radius: 4px; }
+    button { background: linear-gradient(135deg, #B8922C, #D4A840); color: #0C1A0E; border: none; padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+    button:hover { filter: brightness(1.1); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status { margin-top: 10px; padding: 10px; border-radius: 4px; }
+    .success { background: rgba(60,179,113,.2); color: #3CB371; }
+    .error { background: rgba(224,80,80,.2); color: #E05050; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    th, td { padding: 8px; text-align: left; border-bottom: 1px solid rgba(196,158,80,.15); }
+    th { color: #EFC060; }
+    input { background: #0A1A0C; color: #FDFAF2; border: 1px solid rgba(196,158,80,.3); padding: 10px; border-radius: 4px; width: 200px; }
+  </style>
+</head>
+<body>
+  <h1>📥 Import RSVP Data</h1>
+  
+  <div class="card">
+    <h3>Login Required</h3>
+    <p>Enter admin credentials to proceed:</p>
+    <input type="text" id="username" placeholder="Username" style="margin-right: 10px;">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()" id="loginBtn">Login</button>
+    <div id="loginStatus" class="status" style="display:none"></div>
+  </div>
+
+  <div class="card" id="importSection" style="display:none">
+    <h3>Paste CSV Data</h3>
+    <p>Paste the CSV content below (first row should be headers):</p>
+    <textarea id="csvData" placeholder="Name,Email,Phone,Attendance,Guest Of,Barcode,Party Size,Dietary,Message,Email Sent,Date
+Oyekan fareedah,oyekanfareedah@gmail.com,08086386138,physical,bride,HL2026-3EF86E4DE78D,1,,,No,2026-03-21 19:29:44
+..."></textarea>
+    <button onclick="importData()" id="importBtn">Import RSVP Data</button>
+    <div id="importStatus" class="status" style="display:none"></div>
+  </div>
+
+  <div class="card" id="resultSection" style="display:none">
+    <h3>Import Results</h3>
+    <div id="importResults"></div>
+  </div>
+
+  <div class="card" id="currentDataSection" style="display:none">
+    <h3>Current RSVP Data</h3>
+    <button onclick="loadCurrentData()">Refresh Data</button>
+    <div id="currentData"></div>
+  </div>
+
+  <script>
+    var token = localStorage.getItem('adminToken');
+    
+    // Check if already logged in
+    if (token) {
+      verifyToken();
+    }
+
+    function login() {
+      var username = document.getElementById('username').value;
+      var password = document.getElementById('password').value;
+      var statusEl = document.getElementById('loginStatus');
+      
+      if (!username || !password) {
+        statusEl.textContent = 'Please enter username and password';
+        statusEl.className = 'status error';
+        statusEl.style.display = 'block';
+        return;
+      }
+
+      fetch('/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok && data.token) {
+          token = data.token;
+          localStorage.setItem('adminToken', token);
+          statusEl.textContent = '✓ Logged in successfully';
+          statusEl.className = 'status success';
+          statusEl.style.display = 'block';
+          showImportSection();
+        } else {
+          statusEl.textContent = 'Error: ' + (data.error || 'Login failed');
+          statusEl.className = 'status error';
+          statusEl.style.display = 'block';
+        }
+      })
+      .catch(err => {
+        statusEl.textContent = 'Connection error';
+        statusEl.className = 'status error';
+        statusEl.style.display = 'block';
+      });
+    }
+
+    function verifyToken() {
+      fetch('/admin/check', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          showImportSection();
+        } else {
+          localStorage.removeItem('adminToken');
+          token = null;
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem('adminToken');
+        token = null;
+      });
+    }
+
+    function showImportSection() {
+      document.getElementById('importSection').style.display = 'block';
+      document.getElementById('currentDataSection').style.display = 'block';
+      loadCurrentData();
+    }
+
+    function parseCSV(content) {
+      var lines = [];
+      var currentLine = '';
+      var inQuotes = false;
+      
+      for (var i = 0; i < content.length; i++) {
+        var char = content[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+          currentLine += char;
+        } else if (char === '\n' && !inQuotes) {
+          if (currentLine.trim()) lines.push(currentLine.trim());
+          currentLine = '';
+        } else if (char !== '\r') {
+          currentLine += char;
+        }
+      }
+      if (currentLine.trim()) lines.push(currentLine.trim());
+      return lines;
+    }
+
+    function parseCSVLine(line) {
+      var values = [];
+      var current = '';
+      var inQuotes = false;
+      
+      for (var i = 0; i < line.length; i++) {
+        var char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+      return values;
+    }
+
+    function importData() {
+      var csvContent = document.getElementById('csvData').value.trim();
+      var statusEl = document.getElementById('importStatus');
+      var resultEl = document.getElementById('importResults');
+      
+      if (!csvContent) {
+        statusEl.textContent = 'Please paste CSV data';
+        statusEl.className = 'status error';
+        statusEl.style.display = 'block';
+        return;
+      }
+
+      var lines = parseCSV(csvContent);
+      if (lines.length < 2) {
+        statusEl.textContent = 'CSV must have header row and at least one data row';
+        statusEl.className = 'status error';
+        statusEl.style.display = 'block';
+        return;
+      }
+
+      var dataRows = lines.slice(1);
+      var rsvps = [];
+      
+      for (var i = 0; i < dataRows.length; i++) {
+        var values = parseCSVLine(dataRows[i]);
+        if (values.length >= 4) {
+          rsvps.push({
+            name: values[0] || '',
+            email: values[1] || null,
+            phone: values[2] || null,
+            attendance: values[3] || 'physical',
+            guest_of: values[4] || null,
+            barcode: values[5] || null,
+            party_size: parseInt(values[6]) || 1,
+            dietary: values[7] || null,
+            message: values[8] || null,
+            barcode_sent: values[9] === 'Yes' ? true : false,
+            created_at: values[10] || new Date().toISOString()
+          });
+        }
+      }
+
+      statusEl.textContent = 'Importing ' + rsvps.length + ' RSVPs...';
+      statusEl.className = 'status';
+      statusEl.style.display = 'block';
+      document.getElementById('importBtn').disabled = true;
+
+      fetch('/admin/import-rsvps', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ rsvps: rsvps })
+      })
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('importBtn').disabled = false;
+        if (data.ok) {
+          statusEl.textContent = '✓ Imported ' + data.imported + ' RSVPs, ' + data.errors + ' errors';
+          statusEl.className = 'status success';
+          resultEl.innerHTML = '<p>Total: ' + data.total + '</p>';
+          loadCurrentData();
+        } else {
+          statusEl.textContent = 'Error: ' + (data.error || 'Import failed');
+          statusEl.className = 'status error';
+        }
+        statusEl.style.display = 'block';
+        document.getElementById('resultSection').style.display = 'block';
+      })
+      .catch(err => {
+        document.getElementById('importBtn').disabled = false;
+        statusEl.textContent = 'Connection error: ' + err.message;
+        statusEl.className = 'status error';
+        statusEl.style.display = 'block';
+      });
+    }
+
+    function loadCurrentData() {
+      var dataEl = document.getElementById('currentData');
+      dataEl.innerHTML = '<p>Loading...</p>';
+      
+      fetch('/admin/rsvp', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.rsvps) {
+          var html = '<p>Total: ' + data.rsvps.length + ' RSVPs</p>';
+          if (data.stats) {
+            html += '<table><thead><tr><th>Attendance</th><th>Count</th><th>Guests</th></tr></thead><tbody>';
+            for (var i = 0; i < data.stats.length; i++) {
+              html += '<tr><td>' + data.stats[i].attendance + '</td><td>' + data.stats[i].cnt + '</td><td>' + data.stats[i].ppl + '</td></tr>';
+            }
+            html += '</tbody></table>';
+          }
+          dataEl.innerHTML = html;
+        }
+      })
+      .catch(err => {
+        dataEl.innerHTML = '<p>Error loading data</p>';
+      });
+    }
+  </script>
+</body>
+</html>

@@ -14,7 +14,7 @@ const multer       = require('multer');
 const { v4: uuid } = require('uuid');
 const fs           = require('fs');
 const QRCode       = require('qrcode');
-const { Q }        = require('./db/database');
+const { Q, db }   = require('./db/database');
 
 const app    = express();
 const server = http.createServer(app);
@@ -658,10 +658,86 @@ app.get('/api/guest-checklist', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════
+//  ADMIN RSVP IMPORT API
+// ═══════════════════════════════════════════════════
+
+// Import RSVP data from admin panel
+app.post('/admin/import-rsvps', requireAdmin, (req, res) => {
+  const { rsvps } = req.body;
+  
+  if (!rsvps || !Array.isArray(rsvps) || rsvps.length === 0) {
+    return res.status(400).json({ error: 'No RSVP data provided' });
+  }
+  
+  let imported = 0;
+  let errors = 0;
+  const results = [];
+  
+  const insertStmt = db.prepare(`
+    INSERT OR REPLACE INTO rsvp (name, email, phone, attendance, guest_of, barcode, party_size, dietary, message, barcode_sent, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  
+  for (const rsvp of rsvps) {
+    try {
+      // Validate required fields
+      if (!rsvp.name || !rsvp.attendance) {
+        errors++;
+        results.push({ name: rsvp.name || 'Unknown', status: 'error', error: 'Missing required fields' });
+        continue;
+      }
+      
+      // Validate attendance
+      if (!['physical', 'virtual', 'regrets'].includes(rsvp.attendance)) {
+        errors++;
+        results.push({ name: rsvp.name, status: 'error', error: 'Invalid attendance value' });
+        continue;
+      }
+      
+      // Generate barcode if not provided
+      const barcode = rsvp.barcode || 'HL2026-' + crypto.randomBytes(6).toString('hex').toUpperCase();
+      
+      insertStmt.run(
+        sanitize(rsvp.name),
+        rsvp.email ? sanitize(rsvp.email) : null,
+        rsvp.phone ? sanitize(rsvp.phone) : null,
+        rsvp.attendance,
+        rsvp.guest_of || null,
+        barcode,
+        Math.min(20, parseInt(rsvp.party_size) || 1),
+        rsvp.dietary ? sanitize(rsvp.dietary) : null,
+        rsvp.message ? sanitize(rsvp.message) : null,
+        rsvp.barcode_sent ? 1 : 0,
+        rsvp.created_at || new Date().toISOString()
+      );
+      
+      imported++;
+      results.push({ name: rsvp.name, status: 'imported', barcode: barcode });
+      
+    } catch (err) {
+      errors++;
+      results.push({ name: rsvp.name, status: 'error', error: err.message });
+    }
+  }
+  
+  // Notify connected clients
+  io.emit('rsvp:new', {});
+  
+  res.json({ 
+    ok: true, 
+    imported, 
+    errors, 
+    total: rsvps.length,
+    results: results.slice(0, 50) // Limit results to prevent large responses
+  });
+});
+
+// ═══════════════════════════════════════════════════
 //  PAGE ROUTES (express.static handles / and /admin.html)
 // ═══════════════════════════════════════════════════
 app.get('/admin',   (req, res) => res.sendFile(path.join(__dirname, 'public/admin.html')));
 app.get('/verify',  (req, res) => res.sendFile(path.join(__dirname, 'public/verify.html')));
+app.get('/import-rsvp-data', (req, res) => res.sendFile(path.join(__dirname, 'public/import-rsvp-data.html')));
 app.get('/health',  (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 app.get('/ping',    (req, res) => res.send('pong'));
 
