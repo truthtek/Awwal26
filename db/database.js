@@ -146,6 +146,12 @@ const seedSettings = [
   ['chat_open',       '1'],
   ['blessings_open',  '1'],
   ['rsvp_open',       '1'],
+  // Email scheduling settings
+  ['email_schedule_1',  '2026-04-15T12:00:00+01:00'],  // First email: April 15, 2026 at 12:00 PM WAT
+  ['email_schedule_2',  '2026-04-18T10:00:00+01:00'],  // Reminder: April 18, 2026 at 10:00 AM WAT
+  ['email_schedule_enabled', '1'],  // Auto email enabled by default
+  ['email_1_sent',      '0'],  // Track if first email was sent
+  ['email_2_sent',      '0'],  // Track if reminder email was sent
 ];
 const ins = db.prepare('INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)');
 for (const [k,v] of seedSettings) ins.run(k, v);

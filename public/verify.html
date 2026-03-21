@@ -267,6 +267,31 @@
       <div id="historyList"></div>
     </div>
     
+    <!-- Guest Checklist Button -->
+    <div class="card" style="margin-top:16px">
+      <button class="btn btn-gold" onclick="showChecklist()">
+        📋 View Guest Checklist
+      </button>
+    </div>
+    
+    <!-- Guest Checklist Modal -->
+    <div class="guest-modal" id="checklistModal">
+      <div class="guest-modal-content" style="max-width:500px;border-color:var(--gold)">
+        <div class="modal-header" style="background:linear-gradient(135deg,rgba(196,158,80,.2),rgba(196,158,80,.1));border-bottom-color:rgba(196,158,80,.3)">
+          <div class="modal-valid-icon" style="background:var(--gold)">📋</div>
+          <div class="modal-valid-text" style="color:var(--gold3)">Guest Checklist</div>
+          <div class="modal-guest-name" id="checklistStats" style="font-size:1rem">Loading...</div>
+        </div>
+        <div class="modal-body" id="checklistBody" style="max-height:400px;overflow-y:auto;padding:12px">
+          <!-- Checklist items will be inserted here -->
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn modal-btn-secondary" onclick="refreshChecklist()">Refresh</button>
+          <button class="modal-btn modal-btn-primary" style="background:var(--gold)" onclick="closeChecklistModal()">Close</button>
+        </div>
+      </div>
+    </div>
+    
     <div class="footer">
       <p class="footer-text">Hawau & Lukman Wedding • 19 April 2026</p>
     </div>
@@ -563,7 +588,7 @@
       var guestOfHtml = '';
       if (guest.guest_of) {
         var guestOfClass = guest.guest_of;
-        var guestOfText = guest.guest_of === 'bride' ? "Bride's Guest" : guest.guest_of === 'groom' ? "Groom's Guest" : 'Both';
+        var guestOfText = guest.guest_of === 'bride' ? "Guest of Bride" : guest.guest_of === 'groom' ? "Guest of Groom" : 'Guest of Both';
         guestOfHtml = '<div class="modal-info-row"><span class="modal-label">Guest Of</span><span class="modal-value"><span class="modal-badge ' + guestOfClass + '">' + guestOfText + '</span></span></div>';
       }
       
@@ -663,6 +688,127 @@
         document.getElementById('barcodeInput').focus();
       }
     }
+    
+    // ═══════════════════════════════════════════════════
+    //  GUEST CHECKLIST FUNCTIONS
+    // ═══════════════════════════════════════════════════
+    
+    var checklistData = null;
+    
+    function showChecklist() {
+      var modal = document.getElementById('checklistModal');
+      modal.classList.add('show');
+      loadChecklist();
+    }
+    
+    function closeChecklistModal() {
+      var modal = document.getElementById('checklistModal');
+      modal.classList.remove('show');
+    }
+    
+    function refreshChecklist() {
+      loadChecklist();
+    }
+    
+    function loadChecklist() {
+      var checklistBody = document.getElementById('checklistBody');
+      var checklistStats = document.getElementById('checklistStats');
+      
+      checklistBody.innerHTML = '<div style="text-align:center;padding:40px"><div style="width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto"></div><p style="margin-top:12px;color:var(--muted);font-size:.8rem">Loading checklist...</p></div>';
+      
+      fetch('/api/guest-checklist')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          checklistData = data;
+          var stats = data.stats;
+          var checklist = data.checklist;
+          
+          // Update stats
+          checklistStats.innerHTML = 
+            '<span style="color:var(--green)">' + stats.checkedIn + '</span> / ' + stats.total + ' checked in' +
+            ' <span style="color:var(--muted);font-size:.7rem">(Physical: ' + stats.physical + ')</span>';
+          
+          // Sort: checked in first, then by name
+          checklist.sort(function(a, b) {
+            if (a.checkedIn !== b.checkedIn) return a.checkedIn ? -1 : 1;
+            return a.name.localeCompare(b.name);
+          });
+          
+          // Build list
+          var html = '';
+          for (var i = 0; i < checklist.length; i++) {
+            var guest = checklist[i];
+            var checkedIcon = guest.checkedIn ? '✓' : '○';
+            var checkedClass = guest.checkedIn ? 'checked' : '';
+            var attendanceIcon = guest.attendance === 'physical' ? '📍' : guest.attendance === 'virtual' ? '💻' : '❌';
+            var guestOfIcon = guest.guest_of === 'bride' ? '👰' : guest.guest_of === 'groom' ? '🤵' : '💑';
+            
+            html += '<div class="checklist-item ' + checkedClass + '" onclick="viewGuestFromChecklist(\'' + (guest.barcode || '') + '\')">';
+            html += '<span class="checklist-check">' + checkedIcon + '</span>';
+            html += '<span class="checklist-name">' + escapeHtml(guest.name) + '</span>';
+            html += '<span class="checklist-icons">' + attendanceIcon + ' ' + guestOfIcon + '</span>';
+            html += '</div>';
+          }
+          
+          if (checklist.length === 0) {
+            html = '<div style="text-align:center;padding:40px;color:var(--muted)"><p>No guests registered yet</p></div>';
+          }
+          
+          checklistBody.innerHTML = html;
+        })
+        .catch(function(err) {
+          console.error('Failed to load checklist:', err);
+          checklistBody.innerHTML = '<div style="text-align:center;padding:40px;color:var(--red)"><p>Failed to load checklist</p><button class="btn btn-secondary" style="margin-top:12px;padding:8px 16px" onclick="loadChecklist()">Retry</button></div>';
+        });
+    }
+    
+    function viewGuestFromChecklist(barcode) {
+      if (!barcode) return;
+      closeChecklistModal();
+      document.getElementById('barcodeInput').value = barcode.replace('HL2026-', '');
+      switchMode('manual');
+      verifyBarcode();
+    }
   </script>
+  
+  <style>
+    /* Checklist item styles */
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      background: rgba(0,0,0,.2);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .checklist-item:hover {
+      background: rgba(0,0,0,.35);
+    }
+    .checklist-item.checked {
+      background: rgba(60,179,113,.1);
+      border: 1px solid rgba(60,179,113,.2);
+    }
+    .checklist-item.checked .checklist-check {
+      color: var(--green);
+    }
+    .checklist-item.checked .checklist-name {
+      opacity: 0.7;
+    }
+    .checklist-check {
+      width: 24px;
+      font-size: 1.1rem;
+      color: var(--muted);
+    }
+    .checklist-name {
+      flex: 1;
+      font-size: .85rem;
+    }
+    .checklist-icons {
+      font-size: .75rem;
+      opacity: 0.7;
+    }
+  </style>
 </body>
 </html>

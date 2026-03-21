@@ -422,8 +422,8 @@ app.post('/admin/send-barcodes', requireAdmin, async (req, res) => {
       continue;
     }
 
-    const guestOfText = rsvp.guest_of === 'bride' ? "Bride's Guest (Hawau)" : 
-                        rsvp.guest_of === 'groom' ? "Groom's Guest (Lukman)" : 
+    const guestOfText = rsvp.guest_of === 'bride' ? "Guest of Bride" : 
+                        rsvp.guest_of === 'groom' ? "Guest of Groom" : 
                         rsvp.guest_of === 'both' ? "Guest of Both" : "";
 
     // Get the server's public URL for hosted QR code image
@@ -563,6 +563,101 @@ app.post('/admin/gallery', requireAdmin, upload.single('photo'), (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════
+//  EMAIL SCHEDULING API
+// ═══════════════════════════════════════════════════
+
+// Get email schedule settings
+app.get('/admin/email-schedule', requireAdmin, (req, res) => {
+  res.json({
+    schedule1: Q.get('email_schedule_1') || '2026-04-15T12:00:00+01:00',
+    schedule2: Q.get('email_schedule_2') || '2026-04-18T10:00:00+01:00',
+    enabled: Q.get('email_schedule_enabled') === '1',
+    email1Sent: Q.get('email_1_sent') === '1',
+    email2Sent: Q.get('email_2_sent') === '1',
+  });
+});
+
+// Update email schedule settings
+app.post('/admin/email-schedule', requireAdmin, (req, res) => {
+  const { schedule1, schedule2, enabled } = req.body;
+  
+  if (schedule1) {
+    try {
+      const date = new Date(schedule1);
+      if (isNaN(date.getTime())) throw new Error('Invalid date');
+      Q.set('email_schedule_1', schedule1);
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid schedule 1 date format' });
+    }
+  }
+  
+  if (schedule2) {
+    try {
+      const date = new Date(schedule2);
+      if (isNaN(date.getTime())) throw new Error('Invalid date');
+      Q.set('email_schedule_2', schedule2);
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid schedule 2 date format' });
+    }
+  }
+  
+  if (typeof enabled === 'boolean') {
+    Q.set('email_schedule_enabled', enabled ? '1' : '0');
+  }
+  
+  res.json({ 
+    ok: true, 
+    schedule: {
+      schedule1: Q.get('email_schedule_1'),
+      schedule2: Q.get('email_schedule_2'),
+      enabled: Q.get('email_schedule_enabled') === '1',
+    }
+  });
+});
+
+// Reset email sent flags (to allow resending)
+app.post('/admin/reset-email-sent', requireAdmin, (req, res) => {
+  const { emailNum } = req.body; // 1 or 2
+  if (emailNum === 1) {
+    Q.set('email_1_sent', '0');
+  } else if (emailNum === 2) {
+    Q.set('email_2_sent', '0');
+  } else {
+    return res.status(400).json({ error: 'Invalid emailNum. Use 1 or 2' });
+  }
+  res.json({ ok: true });
+});
+
+// ═══════════════════════════════════════════════════
+//  GUEST CHECKLIST API
+// ═══════════════════════════════════════════════════
+
+// Get all RSVPs with check-in status for verify page
+app.get('/api/guest-checklist', (req, res) => {
+  const rsvps = Q.rsvpAll();
+  const checklist = rsvps.map(r => ({
+    id: r.id,
+    name: r.name,
+    barcode: r.barcode,
+    attendance: r.attendance,
+    guest_of: r.guest_of,
+    party_size: r.party_size,
+    checkedIn: r.scanned_at !== null,
+    scannedAt: r.scanned_at,
+  }));
+  
+  const stats = {
+    total: rsvps.length,
+    checkedIn: rsvps.filter(r => r.scanned_at !== null).length,
+    physical: rsvps.filter(r => r.attendance === 'physical').length,
+    virtual: rsvps.filter(r => r.attendance === 'virtual').length,
+    regrets: rsvps.filter(r => r.attendance === 'regrets').length,
+  };
+  
+  res.json({ checklist, stats });
+});
+
+// ═══════════════════════════════════════════════════
 //  PAGE ROUTES (express.static handles / and /admin.html)
 // ═══════════════════════════════════════════════════
 app.get('/admin',   (req, res) => res.sendFile(path.join(__dirname, 'public/admin.html')));
@@ -634,6 +729,167 @@ io.on('connection', (socket) => {
     io.emit('viewer:count', Q.viewerCount());
   });
 });
+
+// ═══════════════════════════════════════════════════
+//  EMAIL SCHEDULER
+// ═══════════════════════════════════════════════════
+
+// Helper function to send scheduled emails
+async function sendScheduledEmails(emailNum) {
+  // Only send to guests who are attending physically and have email
+  const rsvpsWithEmails = Q.rsvpPhysicalWithEmails();
+  
+  if (rsvpsWithEmails.length === 0) {
+    console.log(`Scheduled email ${emailNum}: No physical attendees with emails`);
+    return { sent: 0, failed: 0 };
+  }
+
+  const emailConfig = {
+    service: process.env.EMAIL_SERVICE || 'gmail',
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  };
+
+  if (!emailConfig.user || !emailConfig.pass) {
+    console.log('Email not configured. Set EMAIL_USER and EMAIL_PASS environment variables.');
+    return { sent: 0, failed: 0, error: 'Email not configured' };
+  }
+
+  let nodemailer;
+  try {
+    nodemailer = require('nodemailer');
+  } catch (e) {
+    console.log('Nodemailer not installed');
+    return { sent: 0, failed: 0, error: 'Nodemailer not installed' };
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: emailConfig.service,
+    auth: { user: emailConfig.user, pass: emailConfig.pass }
+  });
+
+  let sent = 0;
+  let failed = 0;
+  const serverUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+  const isFirstEmail = emailNum === 1;
+  const subject = isFirstEmail 
+    ? 'Your Wedding Invitation Barcode - Hawau & Lukman 2026'
+    : 'Reminder: Your Wedding Barcode - Hawau & Lukman 2026 (Tomorrow!)';
+
+  for (const rsvp of rsvpsWithEmails) {
+    // For first email, skip if already sent
+    // For reminder, skip if already sent this reminder
+    if (isFirstEmail && rsvp.barcode_sent) continue;
+    if (!rsvp.barcode) continue;
+
+    const guestOfText = rsvp.guest_of === 'bride' ? "Guest of Bride" : 
+                        rsvp.guest_of === 'groom' ? "Guest of Groom" : 
+                        rsvp.guest_of === 'both' ? "Guest of Both" : "";
+    const qrCodeUrl = `${serverUrl}/api/qrcode/${rsvp.barcode}`;
+
+    const mailOptions = {
+      from: `"Hawau & Lukman Wedding" <${emailConfig.user}>`,
+      to: rsvp.email,
+      subject: subject,
+      html: `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #0C1A0E; border-radius: 12px; border: 1px solid #B8922C;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-family: 'Great Vibes', cursive, serif; color: #EFC060; font-size: 2.5rem; margin: 0;">Hawau & Lukman</h1>
+            <p style="color: #3DD4C8; font-size: 0.9rem; letter-spacing: 2px;">WEDDING CELEBRATION • 19 APRIL 2026</p>
+            ${!isFirstEmail ? '<p style="color: #EFC060; font-size: 1rem; margin-top: 10px;">⏰ REMINDER: Wedding is Tomorrow!</p>' : ''}
+          </div>
+          
+          <div style="background: rgba(255,255,255,0.05); padding: 25px; border-radius: 8px; margin-bottom: 20px;">
+            <h2 style="color: #EFC060; font-size: 1.1rem; margin-top: 0;">Dear ${rsvp.name},</h2>
+            <p style="color: #FDFAF2; line-height: 1.8;">${isFirstEmail 
+              ? "Assalamu alaikum! Thank you for your RSVP. Your unique QR code for the wedding celebration is below:" 
+              : "This is a friendly reminder that the wedding is tomorrow! Please remember to bring your QR code for entry:"}</p>
+            
+            <div style="text-align: center; padding: 25px; background: #fff; border-radius: 8px; margin: 20px 0;">
+              <img src="${qrCodeUrl}" alt="QR Code" style="width: 200px; height: 200px; display: block; margin: 0 auto;" />
+              <p style="font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: bold; color: #0C1A0E; margin: 15px 0 5px; letter-spacing: 2px;">${rsvp.barcode}</p>
+              <p style="color: #666; font-size: 0.75rem;">Scan this QR code at the venue entrance</p>
+            </div>
+            
+            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-top: 20px;">
+              <h3 style="color: #3DD4C8; font-size: 0.9rem; margin-top: 0;">Your Registration Details:</h3>
+              <p style="color: #FDFAF2; margin: 8px 0;"><strong>Attendance:</strong> ${rsvp.attendance === 'physical' ? 'In Person' : rsvp.attendance === 'virtual' ? 'Virtual' : 'Regrets'}</p>
+              ${guestOfText ? `<p style="color: #FDFAF2; margin: 8px 0;"><strong>Guest Of:</strong> ${guestOfText}</p>` : ''}
+              <p style="color: #FDFAF2; margin: 8px 0;"><strong>Party Size:</strong> ${rsvp.party_size} ${rsvp.party_size > 1 ? 'guests' : 'guest'}</p>
+              ${rsvp.dietary ? `<p style="color: #FDFAF2; margin: 8px 0;"><strong>Dietary Notes:</strong> ${rsvp.dietary}</p>` : ''}
+            </div>
+          </div>
+          
+          <div style="background: rgba(15,122,106,0.2); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #EFC060; font-size: 1rem; margin-top: 0;">📍 Event Details</h3>
+            <p style="color: #FDFAF2; margin: 8px 0;"><strong>Date:</strong> Sunday, 19 April 2026</p>
+            <p style="color: #FDFAF2; margin: 8px 0;"><strong>Engagement:</strong> 11:00 AM WAT</p>
+            <p style="color: #FDFAF2; margin: 8px 0;"><strong>Nikkah:</strong> 1:00 PM WAT</p>
+            <p style="color: #FDFAF2; margin: 8px 0;"><strong>Venue:</strong> Marque Event Centre, 22 Town Planning Way, Ilupeju, Lagos</p>
+            <p style="color: #FDFAF2; margin: 8px 0;"><strong>Dress Code:</strong> White & Green</p>
+          </div>
+          
+          <p style="color: #FDFAF2; text-align: center; line-height: 1.8;">Please present this QR code at the venue entrance. We look forward to celebrating with you!</p>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(184,146,44,0.3);">
+            <p style="color: #3DD4C8; font-size: 0.85rem;">#HawauAndLukman2026</p>
+            <p style="color: rgba(253,250,242,0.5); font-size: 0.75rem;">Questions? Contact: +234 802 319 3526 (Bride) | +234 706 095 7637 (Groom)</p>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      if (isFirstEmail) {
+        Q.rsvpMarkBarcodeSent(rsvp.id);
+      }
+      sent++;
+    } catch (e) {
+      console.error(`Failed to send email to ${rsvp.email}:`, e.message);
+      failed++;
+    }
+  }
+
+  console.log(`Scheduled email ${emailNum} completed: ${sent} sent, ${failed} failed`);
+  return { sent, failed };
+}
+
+// Check for scheduled emails every minute
+setInterval(async () => {
+  const enabled = Q.get('email_schedule_enabled') === '1';
+  if (!enabled) return;
+
+  const now = new Date();
+  
+  // Check first scheduled email
+  const schedule1 = Q.get('email_schedule_1');
+  const email1Sent = Q.get('email_1_sent') === '1';
+  if (schedule1 && !email1Sent) {
+    const scheduleDate = new Date(schedule1);
+    if (now >= scheduleDate) {
+      console.log('⏰ Triggering scheduled email 1...');
+      const result = await sendScheduledEmails(1);
+      Q.set('email_1_sent', '1');
+      Q.set('email_1_sent_at', now.toISOString());
+      console.log('Scheduled email 1 result:', result);
+    }
+  }
+  
+  // Check second scheduled email (reminder)
+  const schedule2 = Q.get('email_schedule_2');
+  const email2Sent = Q.get('email_2_sent') === '1';
+  if (schedule2 && !email2Sent) {
+    const scheduleDate = new Date(schedule2);
+    if (now >= scheduleDate) {
+      console.log('⏰ Triggering scheduled email 2 (reminder)...');
+      const result = await sendScheduledEmails(2);
+      Q.set('email_2_sent', '1');
+      Q.set('email_2_sent_at', now.toISOString());
+      console.log('Scheduled email 2 result:', result);
+    }
+  }
+}, 60 * 1000); // Check every minute
 
 // ═══════════════════════════════════════════════════
 //  START

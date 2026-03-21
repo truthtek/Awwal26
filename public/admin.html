@@ -295,6 +295,36 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div id="barcodeResults" style="margin-top:12px;display:none"></div>
         </div>
         
+        <!-- Email Scheduling Section -->
+        <div class="card" style="background:rgba(196,158,80,.08);border-color:rgba(196,158,80,.2)">
+          <div class="ctitle">&#9200; Automatic Email Scheduling</div>
+          <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Configure automatic barcode emails to be sent on specific dates. Emails are sent to physical attendees only.</p>
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:4px">First Email Date & Time</label>
+              <input type="datetime-local" id="emailSchedule1" class="form-input" style="width:100%" onchange="saveEmailSchedule()">
+              <span id="email1Status" style="font-size:.65rem;color:var(--muted);display:block;margin-top:4px"></span>
+            </div>
+            <div>
+              <label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:4px">Reminder Email Date & Time</label>
+              <input type="datetime-local" id="emailSchedule2" class="form-input" style="width:100%" onchange="saveEmailSchedule()">
+              <span id="email2Status" style="font-size:.65rem;color:var(--muted);display:block;margin-top:4px"></span>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="emailScheduleEnabled" onchange="saveEmailSchedule()" style="width:16px;height:16px">
+              <span style="font-size:.78rem">Enable Auto-Send</span>
+            </label>
+            <button class="btn btn-o btn-sm" onclick="loadEmailSchedule()" type="button">&#10227; Refresh</button>
+            <button class="btn btn-r btn-sm" onclick="resetEmailSent(1)" type="button">Reset Email 1</button>
+            <button class="btn btn-r btn-sm" onclick="resetEmailSent(2)" type="button">Reset Email 2</button>
+          </div>
+          <span id="emailScheduleStatus" style="font-size:.72rem;color:var(--muted);display:block;margin-top:8px"></span>
+        </div>
+        
         <div class="card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
             <div class="ctitle" style="margin:0">All RSVPs</div>
@@ -428,7 +458,7 @@ function show(name){
   document.querySelectorAll('.sb-a').forEach(function(a){a.classList.toggle('on',a.dataset.p===name);});
   var panel=document.getElementById('p-'+name);if(panel)panel.classList.add('on');
   closeSB();
-  if(name==='rsvp')loadRsvp();if(name==='guestbook')loadGb();if(name==='blessings')loadBlessings();
+  if(name==='rsvp'){loadRsvp();loadEmailSchedule();}if(name==='guestbook')loadGb();if(name==='blessings')loadBlessings();
   if(name==='chat')loadChat();if(name==='analytics')loadAnalytics();if(name==='stream')loadStreamStatus();if(name==='settings')loadSettings();
 }
 
@@ -665,6 +695,76 @@ function sendBarcodes(){
 }
 
 function delRsvp(id){if(!confirm('Delete this RSVP?'))return;api('DELETE','/admin/rsvp/'+id).then(function(){loadRsvp();refreshAnalytics();toast('RSVP deleted');});}
+
+// Email Scheduling Functions
+function loadEmailSchedule(){
+  api('GET','/admin/email-schedule').then(function(r){
+    if(!r)return;
+    var sched1 = document.getElementById('emailSchedule1');
+    var sched2 = document.getElementById('emailSchedule2');
+    var enabled = document.getElementById('emailScheduleEnabled');
+    var status1 = document.getElementById('email1Status');
+    var status2 = document.getElementById('email2Status');
+    
+    // Convert ISO to datetime-local format
+    if(r.schedule1){
+      sched1.value = r.schedule1.slice(0, 16);
+    }
+    if(r.schedule2){
+      sched2.value = r.schedule2.slice(0, 16);
+    }
+    enabled.checked = r.enabled;
+    
+    status1.innerHTML = r.email1Sent ? '<span style="color:var(--green)">&#10004; Sent</span>' : '<span style="color:var(--muted)">Not sent yet</span>';
+    status2.innerHTML = r.email2Sent ? '<span style="color:var(--green)">&#10004; Sent</span>' : '<span style="color:var(--muted)">Not sent yet</span>';
+    
+    updateScheduleStatus(r.enabled);
+  });
+}
+
+function saveEmailSchedule(){
+  var sched1 = document.getElementById('emailSchedule1').value;
+  var sched2 = document.getElementById('emailSchedule2').value;
+  var enabled = document.getElementById('emailScheduleEnabled').checked;
+  var statusEl = document.getElementById('emailScheduleStatus');
+  
+  var data = {};
+  if(sched1) data.schedule1 = sched1 + ':00+01:00'; // Add seconds and timezone
+  if(sched2) data.schedule2 = sched2 + ':00+01:00';
+  data.enabled = enabled;
+  
+  statusEl.innerHTML = '<span style="color:var(--teal3)">Saving...</span>';
+  
+  api('POST','/admin/email-schedule', data).then(function(r){
+    if(r && r.ok){
+      statusEl.innerHTML = '<span style="color:var(--green)">&#10004; Schedule saved</span>';
+      updateScheduleStatus(enabled);
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--red)">Error saving schedule</span>';
+    }
+  }).catch(function(err){
+    statusEl.innerHTML = '<span style="color:var(--red)">Connection error</span>';
+  });
+}
+
+function updateScheduleStatus(enabled){
+  var statusEl = document.getElementById('emailScheduleStatus');
+  if(enabled){
+    statusEl.innerHTML = '<span style="color:var(--green)">&#9200; Auto-send is ENABLED. Emails will be sent at scheduled times.</span>';
+  } else {
+    statusEl.innerHTML = '<span style="color:var(--gold)">&#9888; Auto-send is DISABLED. Emails will not be sent automatically.</span>';
+  }
+}
+
+function resetEmailSent(num){
+  if(!confirm('Reset email ' + num + ' sent status? This allows it to be sent again.'))return;
+  api('POST','/admin/reset-email-sent', {emailNum: num}).then(function(r){
+    if(r && r.ok){
+      toast('Email ' + num + ' sent status reset');
+      loadEmailSchedule();
+    }
+  });
+}
 
 function exportRsvp(){
   api('GET','/admin/rsvp').then(function(r){
