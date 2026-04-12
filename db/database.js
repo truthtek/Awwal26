@@ -75,6 +75,18 @@ db.exec(`
     message    TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS guest_photos (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL,
+    filename   TEXT NOT NULL UNIQUE,
+    original_name TEXT,
+    mime_type  TEXT,
+    size       INTEGER,
+    caption    TEXT,
+    approved   INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migration: Add guest_of column to existing rsvp table if it doesn't exist
@@ -218,6 +230,18 @@ const Q = {
   chatAdd:  (name,msg) => db.prepare('INSERT INTO chat(name,message) VALUES(?,?)').run(name,msg),
   chatRecent: (lim=60) => db.prepare('SELECT * FROM chat ORDER BY created_at DESC LIMIT ?').all(lim).reverse(),
   chatCount:  ()       => db.prepare('SELECT COUNT(*) as n FROM chat').get().n,
+
+  // Guest Photos
+  photoAdd:    (name, filename, originalName, mimeType, size, caption) => 
+    db.prepare('INSERT INTO guest_photos(name, filename, original_name, mime_type, size, caption) VALUES(?,?,?,?,?,?)').run(name, filename, originalName, mimeType, size, caption),
+  photoAll:    ()  => db.prepare('SELECT * FROM guest_photos ORDER BY created_at DESC').all(),
+  photoGet:    (lim=50) => db.prepare('SELECT * FROM guest_photos WHERE approved=1 ORDER BY created_at DESC LIMIT ?').all(lim),
+  photoCount:  ()  => db.prepare('SELECT COUNT(*) as n FROM guest_photos').get().n,
+  photoDel:    id  => db.prepare('DELETE FROM guest_photos WHERE id=?').run(id),
+  photoGetById: id => db.prepare('SELECT * FROM guest_photos WHERE id=?').get(id),
+  photoApprove: id => db.prepare('UPDATE guest_photos SET approved=1 WHERE id=?').run(id),
+  photoHide:   id  => db.prepare('UPDATE guest_photos SET approved=0 WHERE id=?').run(id),
+  photoResetAll: () => db.prepare('DELETE FROM guest_photos').run(),
 };
 
 module.exports = { db, Q };

@@ -1,0 +1,21 @@
+
+╔══════════════════════════════════════════════════════════════╗
+║              RSVP BACKUP SUMMARY                              ║
+╠══════════════════════════════════════════════════════════════╣
+║  Backup Date: 2026-04-12_16-04-49
+║  Total RSVP Records: 175
+║  Total Guests: 448
+║  
+║  Attendance Breakdown:
+║    - Physical: 166 records (438 guests)
+║    - Virtual: 9 records (10 guests)
+║  
+║  Backup Files Created:
+║    - JSON: backups/rsvp_backup_2026-04-12_16-04-49.json
+║    - CSV: backups/rsvp_backup_2026-04-12_16-04-49.csv
+║    - Database: backups/wedding_db_backup_2026-04-12_16-04-49.db
+║  
+║  Quick Access Files:
+║    - backups/rsvp_latest.json
+║    - backups/rsvp_latest.csv
+╚══════════════════════════════════════════════════════════════╝
