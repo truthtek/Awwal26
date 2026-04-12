@@ -3081,7 +3081,7 @@ select.form-input option{background:var(--forest)}
   <div class="container">
     <p class="sec-label">Share Your Memories</p>
     <h2 class="sec-title">Capture the Moment</h2>
-    <p class="sec-sub">Take photos and videos to share with the couple. Your memories will be saved for them to treasure forever.</p>
+    <p class="sec-sub">Take photos and videos to share privately with the couple. Your memories will be saved directly to their collection.</p>
     <div class="ornament"><div class="o-gem"></div></div>
     
     <div class="memories-capture-wrap">
@@ -3144,12 +3144,11 @@ select.form-input option{background:var(--forest)}
       <div class="status-message" id="photoStatus" style="display:none;"></div>
     </div>
     
-    <!-- Recent Shared Photos -->
-    <div class="recent-photos">
-      <h3 class="recent-photos-title">Recently Shared</h3>
-      <div class="photos-grid" id="sharedPhotosGrid">
-        <div class="photos-loading">Loading...</div>
-      </div>
+    <!-- Thank You Message After Upload -->
+    <div class="thank-you-message" id="thankYouMessage" style="display:none;text-align:center;padding:24px;">
+      <div style="font-size:3rem;margin-bottom:12px;">💝</div>
+      <h3 style="font-family:'Great Vibes',cursive;font-size:1.8rem;color:var(--gold3);margin-bottom:8px;">Thank You!</h3>
+      <p style="color:var(--muted);font-size:.9rem;">Your memory has been shared privately with the couple.</p>
     </div>
   </div>
 </section>
@@ -4765,12 +4764,18 @@ async function uploadPhoto() {
       document.getElementById('photoName').value = '';
       document.getElementById('photoCaption').value = '';
       
-      // Refresh photos gallery
-      loadSharedPhotos();
+      // Show thank you message (photos are private - only visible to couple in admin)
+      const thankYouMsg = document.getElementById('thankYouMessage');
+      if (thankYouMsg) {
+        thankYouMsg.style.display = 'block';
+        setTimeout(() => {
+          thankYouMsg.style.display = 'none';
+        }, 5000);
+      }
       
-      // Show thank you message
+      // Show toast notification
       setTimeout(() => {
-        toast('📸 Memory shared successfully!');
+        toast('📸 Memory shared privately with the couple!');
       }, 500);
     } else {
       showPhotoStatus(data.error || 'Failed to upload. Please try again.', 'error');
@@ -4790,52 +4795,12 @@ function showPhotoStatus(msg, type) {
   el.style.display = msg ? 'block' : 'none';
 }
 
-async function loadSharedPhotos() {
-  const grid = document.getElementById('sharedPhotosGrid');
-  grid.innerHTML = '<div class="photos-loading">Loading memories...</div>';
-  
-  try {
-    const res = await fetch('/api/guest-photos?limit=12');
-    const data = await res.json();
-    
-    if (data.photos && data.photos.length > 0) {
-      grid.innerHTML = data.photos.map(photo => {
-        const isVideo = photo.mime_type && photo.mime_type.startsWith('video/');
-        const thumbSrc = '/uploads/guest-photos/' + photo.filename;
-        
-        if (isVideo) {
-          return `<video src="${thumbSrc}" class="gallery-thumb" muted onclick="openPhotoModal('${thumbSrc}', true)" title="${esc(photo.name)}"></video>`;
-        }
-        return `<img src="${thumbSrc}" onclick="openPhotoModal('${thumbSrc}', false)" alt="Photo by ${esc(photo.name)}" title="${esc(photo.name)}">`;
-      }).join('');
-    } else {
-      grid.innerHTML = '<div class="photos-loading">No memories shared yet. Be the first!</div>';
-    }
-  } catch (err) {
-    console.error('Load photos error:', err);
-    grid.innerHTML = '<div class="photos-loading">Could not load memories</div>';
-  }
-}
-
-function openPhotoModal(src, isVideo) {
-  window.open(src, '_blank');
-}
-
 // Simple escape function for HTML
 function esc(s) {
   const d = document.createElement('div');
   d.appendChild(document.createTextNode(String(s || '')));
   return d.innerHTML;
 }
-
-// Load shared photos when switching to memories tab
-const originalSwitchTab = switchTab;
-switchTab = function(tabId) {
-  originalSwitchTab(tabId);
-  if (tabId === 'memories') {
-    loadSharedPhotos();
-  }
-};
 
 </script>
 </body>
