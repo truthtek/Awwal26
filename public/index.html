@@ -2109,22 +2109,30 @@ select.form-input option{background:var(--forest)}
   height:var(--tab-bar-height);
   padding:6px 4px;
   gap:2px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
 }
+#mobileTabs::-webkit-scrollbar{display:none}
 
 .tab-btn{
-  flex:1;
+  flex:0 0 auto;
+  min-width:52px;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
   gap:2px;
-  padding:6px 2px;
+  padding:6px 8px;
   background:none;
   border:none;
   color:var(--muted);
   transition:all var(--dur);
   border-radius:var(--r);
   position:relative;
+  white-space:nowrap;
 }
 .tab-btn:hover{background:rgba(255,255,255,.04)}
 .tab-btn.active{
@@ -2278,6 +2286,243 @@ select.form-input option{background:var(--forest)}
   .tab-panel.desktop-only.active{
     display:block !important;
   }
+}
+
+/* ============================================
+   MEMORIES SECTION (Photo Capture)
+   ============================================ */
+.memories-capture-wrap{
+  max-width:500px;
+  margin:0 auto;
+}
+
+.camera-container{
+  position:relative;
+  width:100%;
+  aspect-ratio:3/4;
+  background:var(--forest2);
+  border-radius:var(--r-lg);
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+
+.camera-preview{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  background:#000;
+}
+
+.captured-image{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  position:absolute;
+  top:0;
+  left:0;
+}
+
+.camera-overlay{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+
+.camera-frame{
+  position:absolute;
+  inset:20px;
+  border:2px solid rgba(255,255,255,.3);
+  border-radius:var(--r);
+}
+
+.camera-corner{
+  position:absolute;
+  width:20px;
+  height:20px;
+  border:3px solid var(--gold3);
+}
+.camera-corner.tl{top:-2px;left:-2px;border-right:none;border-bottom:none;border-radius:4px 0 0 0}
+.camera-corner.tr{top:-2px;right:-2px;border-left:none;border-bottom:none;border-radius:0 4px 0 0}
+.camera-corner.bl{bottom:-2px;left:-2px;border-right:none;border-top:none;border-radius:0 0 0 4px}
+.camera-corner.br{bottom:-2px;right:-2px;border-left:none;border-top:none;border-radius:0 0 4px 0}
+
+.camera-controls{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:24px;
+  padding:20px;
+  margin-top:16px;
+}
+
+.camera-btn{
+  border:none;
+  background:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all var(--dur);
+  color:var(--white);
+}
+.camera-btn.secondary{
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  background:rgba(255,255,255,.1);
+  border:1px solid var(--border);
+  font-size:1.3rem;
+}
+.camera-btn.secondary:hover{
+  background:rgba(255,255,255,.2);
+  border-color:var(--gold2);
+}
+.camera-btn.capture{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  background:transparent;
+  border:4px solid var(--white);
+  position:relative;
+}
+.camera-btn.capture::before{
+  content:'';
+  position:absolute;
+  inset:4px;
+  border-radius:50%;
+  background:var(--white);
+  transition:all .15s;
+}
+.camera-btn.capture:hover::before{
+  background:var(--gold3);
+  transform:scale(1.1);
+}
+.camera-btn.capture:active::before{
+  transform:scale(0.9);
+  background:var(--gold);
+}
+
+.start-camera-wrap{
+  text-align:center;
+  padding:40px 20px;
+}
+.btn-large{
+  padding:16px 32px;
+  font-size:.75rem;
+}
+.camera-hint{
+  margin-top:12px;
+  font-size:.75rem;
+  color:var(--muted);
+}
+
+.preview-container{
+  position:relative;
+  margin-top:16px;
+  border-radius:var(--r-lg);
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.preview-media{
+  width:100%;
+  display:block;
+}
+.preview-close{
+  position:absolute;
+  top:10px;
+  right:10px;
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  background:rgba(0,0,0,.7);
+  border:1px solid rgba(255,255,255,.3);
+  color:#fff;
+  font-size:1.2rem;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all var(--dur);
+}
+.preview-close:hover{
+  background:rgba(224,80,80,.8);
+  border-color:rgba(224,80,80,.5);
+}
+
+.upload-form{
+  margin-top:20px;
+  padding:20px;
+  background:rgba(0,0,0,.2);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+}
+.upload-actions{
+  display:flex;
+  gap:12px;
+  margin-top:16px;
+}
+.upload-actions .btn{
+  flex:1;
+}
+
+.status-message{
+  margin-top:16px;
+  padding:12px;
+  border-radius:var(--r);
+  text-align:center;
+  font-size:.8rem;
+}
+.status-message.success{
+  background:rgba(60,179,113,.15);
+  border:1px solid rgba(60,179,113,.3);
+  color:#3CB371;
+}
+.status-message.error{
+  background:rgba(224,80,80,.15);
+  border:1px solid rgba(224,80,80,.3);
+  color:#E05050;
+}
+.status-message.info{
+  background:rgba(61,212,200,.1);
+  border:1px solid rgba(61,212,200,.2);
+  color:var(--teal3);
+}
+
+.recent-photos{
+  margin-top:40px;
+}
+.recent-photos-title{
+  font-family:'Cinzel',serif;
+  font-size:.75rem;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--gold3);
+  text-align:center;
+  margin-bottom:16px;
+}
+.photos-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+.photos-grid img{
+  aspect-ratio:1;
+  object-fit:cover;
+  border-radius:var(--r);
+  cursor:pointer;
+  transition:all var(--dur);
+  border:1px solid var(--border);
+}
+.photos-grid img:hover{
+  transform:scale(1.05);
+  border-color:var(--gold2);
+}
+.photos-loading{
+  grid-column:1/-1;
+  text-align:center;
+  padding:20px;
+  color:var(--muted);
+  font-size:.8rem;
 }
 
 /* Gift Section Styles */
@@ -2857,6 +3102,95 @@ select.form-input option{background:var(--forest)}
   </div>
 </section>
 
+<!-- MEMORIES TAB (Mobile Only) - Photo Capture Section -->
+<section id="memories" class="tab-panel mobile-only">
+  <div class="container">
+    <p class="sec-label">Share Your Memories</p>
+    <h2 class="sec-title">Capture the Moment</h2>
+    <p class="sec-sub">Take photos and videos to share with the couple. Your memories will be saved for them to treasure forever.</p>
+    <div class="ornament"><div class="o-gem"></div></div>
+    
+    <div class="memories-capture-wrap">
+      <!-- Camera Preview -->
+      <div class="camera-container" id="cameraContainer">
+        <video id="cameraPreview" autoplay playsinline muted class="camera-preview"></video>
+        <canvas id="photoCanvas" style="display:none;"></canvas>
+        <img id="capturedImage" class="captured-image" style="display:none;">
+        <div class="camera-overlay" id="cameraOverlay">
+          <div class="camera-frame">
+            <div class="camera-corner tl"></div>
+            <div class="camera-corner tr"></div>
+            <div class="camera-corner bl"></div>
+            <div class="camera-corner br"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Camera Controls -->
+      <div class="camera-controls" id="cameraControls">
+        <button class="camera-btn secondary" id="switchCameraBtn" onclick="switchCamera()" title="Switch Camera">
+          <span>&#128260;</span>
+        </button>
+        <button class="camera-btn capture" id="captureBtn" onclick="capturePhoto()" title="Take Photo">
+          <span class="capture-ring"></span>
+        </button>
+        <button class="camera-btn secondary" id="uploadBtn" onclick="openGallery()" title="Upload from Gallery">
+          <span>&#128247;</span>
+        </button>
+      </div>
+      
+      <!-- Hidden file input for gallery upload -->
+      <input type="file" id="galleryInput" accept="image/*,video/*" style="display:none;" onchange="handleGallerySelect(event)">
+      
+      <!-- Photo/Video Preview -->
+      <div class="preview-container" id="previewContainer" style="display:none;">
+        <img id="previewImage" class="preview-media">
+        <video id="previewVideo" class="preview-media" controls style="display:none;"></video>
+        <button class="preview-close" onclick="clearPreview()">&#10005;</button>
+      </div>
+      
+      <!-- Upload Form -->
+      <div class="upload-form" id="uploadForm" style="display:none;">
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" id="photoName" class="form-input" placeholder="Enter your name" maxlength="100">
+        </div>
+        <div class="form-group">
+          <label>Add a Caption (optional)</label>
+          <input type="text" id="photoCaption" class="form-input" placeholder="A message for the couple..." maxlength="200">
+        </div>
+        <div class="upload-actions">
+          <button class="btn btn-outline" onclick="retakePhoto()">
+            <span>&#128260;</span> Retake
+          </button>
+          <button class="btn btn-gold" onclick="uploadPhoto()" id="uploadPhotoBtn">
+            <span class="sp"></span><span class="bt">&#128247; Share Memory</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Start Camera Button -->
+      <div class="start-camera-wrap" id="startCameraWrap">
+        <button class="btn btn-primary btn-large" onclick="startCamera()">
+          <span>&#128247;</span> Open Camera
+        </button>
+        <p class="camera-hint">Tap to start capturing memories</p>
+      </div>
+      
+      <!-- Status Message -->
+      <div class="status-message" id="photoStatus" style="display:none;"></div>
+    </div>
+    
+    <!-- Recent Shared Photos -->
+    <div class="recent-photos">
+      <h3 class="recent-photos-title">Recently Shared</h3>
+      <div class="photos-grid" id="sharedPhotosGrid">
+        <div class="photos-loading">Loading...</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- GIFTS SECTION (Mobile Only) -->
 <section id="gifts" class="tab-panel mobile-only">
   <div class="container">
@@ -3021,6 +3355,10 @@ select.form-input option{background:var(--forest)}
   <button class="tab-btn" data-tab="wishes" onclick="switchTab('wishes')" role="tab" aria-selected="false" aria-controls="wishes">
     <span class="tab-icon">&#128152;</span>
     <span class="tab-label">Wishes</span>
+  </button>
+  <button class="tab-btn" data-tab="memories" onclick="switchTab('memories')" role="tab" aria-selected="false" aria-controls="memories">
+    <span class="tab-icon">&#128247;</span>
+    <span class="tab-label">Memories</span>
   </button>
   <button class="tab-btn" data-tab="gifts" onclick="switchTab('gifts')" role="tab" aria-selected="false" aria-controls="gifts">
     <span class="tab-icon">&#127873;</span>
@@ -4346,6 +4684,266 @@ function fmtDate(iso) {
   if (s.viewerCount) updateViewerUI(s.viewerCount);
   if (s.reactions) renderReactions(s.reactions);
 })();
+
+/* ============================================
+   MEMORIES / PHOTO CAPTURE
+   ============================================ */
+let cameraStream = null;
+let currentFacingMode = 'environment'; // Start with back camera
+let capturedBlob = null;
+let capturedType = null;
+
+async function startCamera() {
+  try {
+    const constraints = {
+      video: {
+        facingMode: currentFacingMode,
+        width: { ideal: 1280 },
+        height: { ideal: 1920 }
+      },
+      audio: false
+    };
+    
+    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+    
+    const video = document.getElementById('cameraPreview');
+    video.srcObject = cameraStream;
+    video.style.display = 'block';
+    
+    document.getElementById('startCameraWrap').style.display = 'none';
+    document.getElementById('cameraControls').style.display = 'flex';
+    document.getElementById('cameraOverlay').style.display = 'block';
+    document.getElementById('uploadForm').style.display = 'none';
+    document.getElementById('previewContainer').style.display = 'none';
+    
+    showPhotoStatus('Camera ready! Tap the button to capture.', 'info');
+  } catch (err) {
+    console.error('Camera error:', err);
+    showPhotoStatus('Unable to access camera. Please check permissions or try uploading from gallery.', 'error');
+  }
+}
+
+async function switchCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+  }
+  
+  currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+  
+  try {
+    const constraints = {
+      video: { facingMode: currentFacingMode },
+      audio: false
+    };
+    
+    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+    document.getElementById('cameraPreview').srcObject = cameraStream;
+  } catch (err) {
+    console.error('Switch camera error:', err);
+    toast('Could not switch camera');
+  }
+}
+
+function capturePhoto() {
+  const video = document.getElementById('cameraPreview');
+  const canvas = document.getElementById('photoCanvas');
+  const ctx = canvas.getContext('2d');
+  
+  // Set canvas size to match video
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  
+  // Draw video frame to canvas
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  
+  // Convert to blob
+  canvas.toBlob(blob => {
+    capturedBlob = blob;
+    capturedType = 'image/jpeg';
+    
+    // Show preview
+    const previewImg = document.getElementById('previewImage');
+    previewImg.src = URL.createObjectURL(blob);
+    
+    document.getElementById('previewContainer').style.display = 'block';
+    document.getElementById('uploadForm').style.display = 'block';
+    document.getElementById('cameraOverlay').style.display = 'none';
+    
+    showPhotoStatus('Photo captured! Add your name and share.', 'success');
+  }, 'image/jpeg', 0.9);
+  
+  // Stop camera
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+}
+
+function openGallery() {
+  document.getElementById('galleryInput').click();
+}
+
+function handleGallerySelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Validate file type
+  if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+    showPhotoStatus('Please select an image or video file.', 'error');
+    return;
+  }
+  
+  // Validate file size (20MB max)
+  if (file.size > 20 * 1024 * 1024) {
+    showPhotoStatus('File too large. Maximum size is 20MB.', 'error');
+    return;
+  }
+  
+  capturedBlob = file;
+  capturedType = file.type;
+  
+  const previewContainer = document.getElementById('previewContainer');
+  const previewImg = document.getElementById('previewImage');
+  const previewVideo = document.getElementById('previewVideo');
+  
+  const objectUrl = URL.createObjectURL(file);
+  
+  if (file.type.startsWith('image/')) {
+    previewImg.src = objectUrl;
+    previewImg.style.display = 'block';
+    previewVideo.style.display = 'none';
+  } else {
+    previewVideo.src = objectUrl;
+    previewVideo.style.display = 'block';
+    previewImg.style.display = 'none';
+  }
+  
+  previewContainer.style.display = 'block';
+  document.getElementById('uploadForm').style.display = 'block';
+  document.getElementById('startCameraWrap').style.display = 'none';
+  
+  showPhotoStatus('File selected! Add your name and share.', 'success');
+}
+
+function clearPreview() {
+  capturedBlob = null;
+  capturedType = null;
+  
+  document.getElementById('previewContainer').style.display = 'none';
+  document.getElementById('uploadForm').style.display = 'none';
+  document.getElementById('startCameraWrap').style.display = 'block';
+  document.getElementById('galleryInput').value = '';
+}
+
+function retakePhoto() {
+  clearPreview();
+  showPhotoStatus('', 'info');
+}
+
+async function uploadPhoto() {
+  if (!capturedBlob) {
+    showPhotoStatus('No photo to upload. Please capture or select a photo first.', 'error');
+    return;
+  }
+  
+  const name = document.getElementById('photoName').value.trim() || 'Guest';
+  const caption = document.getElementById('photoCaption').value.trim();
+  const btn = document.getElementById('uploadPhotoBtn');
+  
+  setLoad(btn, true);
+  showPhotoStatus('Uploading your memory...', 'info');
+  
+  const formData = new FormData();
+  formData.append('photo', capturedBlob, capturedType.startsWith('video/') ? 'memory.mp4' : 'memory.jpg');
+  formData.append('name', name);
+  if (caption) formData.append('caption', caption);
+  
+  try {
+    const res = await fetch('/api/guest-photos', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await res.json();
+    
+    if (data.ok) {
+      showPhotoStatus('✓ Thank you for sharing your memory with us!', 'success');
+      
+      // Reset form
+      clearPreview();
+      document.getElementById('photoName').value = '';
+      document.getElementById('photoCaption').value = '';
+      
+      // Refresh photos gallery
+      loadSharedPhotos();
+      
+      // Show thank you message
+      setTimeout(() => {
+        toast('📸 Memory shared successfully!');
+      }, 500);
+    } else {
+      showPhotoStatus(data.error || 'Failed to upload. Please try again.', 'error');
+    }
+  } catch (err) {
+    console.error('Upload error:', err);
+    showPhotoStatus('Network error. Please check your connection and try again.', 'error');
+  } finally {
+    setLoad(btn, false);
+  }
+}
+
+function showPhotoStatus(msg, type) {
+  const el = document.getElementById('photoStatus');
+  el.textContent = msg;
+  el.className = 'status-message ' + type;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+async function loadSharedPhotos() {
+  const grid = document.getElementById('sharedPhotosGrid');
+  grid.innerHTML = '<div class="photos-loading">Loading memories...</div>';
+  
+  try {
+    const res = await fetch('/api/guest-photos?limit=12');
+    const data = await res.json();
+    
+    if (data.photos && data.photos.length > 0) {
+      grid.innerHTML = data.photos.map(photo => {
+        const isVideo = photo.mime_type && photo.mime_type.startsWith('video/');
+        const thumbSrc = '/uploads/guest-photos/' + photo.filename;
+        
+        if (isVideo) {
+          return `<video src="${thumbSrc}" class="gallery-thumb" muted onclick="openPhotoModal('${thumbSrc}', true)" title="${esc(photo.name)}"></video>`;
+        }
+        return `<img src="${thumbSrc}" onclick="openPhotoModal('${thumbSrc}', false)" alt="Photo by ${esc(photo.name)}" title="${esc(photo.name)}">`;
+      }).join('');
+    } else {
+      grid.innerHTML = '<div class="photos-loading">No memories shared yet. Be the first!</div>';
+    }
+  } catch (err) {
+    console.error('Load photos error:', err);
+    grid.innerHTML = '<div class="photos-loading">Could not load memories</div>';
+  }
+}
+
+function openPhotoModal(src, isVideo) {
+  // Simple fullscreen view
+  if (isVideo) {
+    window.open(src, '_blank');
+  } else {
+    window.open(src, '_blank');
+  }
+}
+
+// Load shared photos when switching to memories tab
+const originalSwitchTab = switchTab;
+switchTab = function(tabId) {
+  originalSwitchTab(tabId);
+  if (tabId === 'memories') {
+    loadSharedPhotos();
+  }
+};
+
 </script>
 </body>
 </html>

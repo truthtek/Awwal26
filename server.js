@@ -54,12 +54,12 @@ app.use(helmet({
   frameguard: { action: 'sameorigin' }
 }));
 
-// Additional security headers - Allow camera for verify page
+// Additional security headers - Allow camera for verify page and photo capture
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  // Allow camera access for the verify page
-  if (req.path === '/verify') {
+  // Allow camera access for the verify page and main page (for photo capture)
+  if (req.path === '/verify' || req.path === '/' || req.path === '/index.html') {
     res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
   } else {
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
@@ -317,6 +317,140 @@ app.get('/api/qrcode/:barcode', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════
+//  GUEST PHOTOS API
+// ═══════════════════════════════════════════════════
+
+// Guest photo upload storage
+const photoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const photosDir = path.join(__dirname, 'public/uploads/guest-photos');
+    if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir, { recursive: true });
+    cb(null, photosDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, 'guest_' + Date.now() + '_' + uuid().substring(0, 8) + ext);
+  }
+});
+const photoUpload = multer({ 
+  storage: photoStorage, 
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images and videos are allowed.'), false);
+    }
+  }
+});
+
+// Upload a guest photo/video
+app.post('/api/guest-photos', postLimit, photoUpload.single('photo'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  
+  const name = sanitize((req.body.name || 'Guest').trim()).substring(0, 100);
+  const caption = req.body.caption ? sanitize(req.body.caption.trim()).substring(0, 500) : null;
+  
+  try {
+    Q.photoAdd(name, req.file.filename, req.file.originalname, req.file.mimetype, req.file.size, caption);
+    
+    // Notify admin via socket
+    io.emit('photo:new', {
+      id: Q.photoCount(),
+      name,
+      filename: req.file.filename,
+      caption,
+      created_at: new Date().toISOString()
+    });
+    
+    res.json({ 
+      ok: true, 
+      message: 'Photo uploaded successfully! Thank you for sharing your memory.',
+      filename: req.file.filename 
+    });
+  } catch (err) {
+    console.error('Photo upload error:', err);
+    // Delete the uploaded file if database insert fails
+    fs.unlinkSync(req.file.path);
+    res.status(500).json({ error: 'Failed to save photo' });
+  }
+});
+
+// Get approved photos (public)
+app.get('/api/guest-photos', (req, res) => {
+  const limit = Math.min(100, +req.query.limit || 50);
+  const photos = Q.photoGet(limit);
+  res.json({ photos, total: Q.photoCount() });
+});
+
+// Get all photos (admin only)
+app.get('/admin/guest-photos', requireAdmin, (req, res) => {
+  const photos = Q.photoAll();
+  res.json({ photos, total: photos.length });
+});
+
+// Delete a photo (admin only)
+app.delete('/admin/guest-photos/:id', requireAdmin, (req, res) => {
+  const photo = Q.photoGetById(+req.params.id);
+  if (!photo) {
+    return res.status(404).json({ error: 'Photo not found' });
+  }
+  
+  // Delete file from disk
+  const filePath = path.join(__dirname, 'public/uploads/guest-photos', photo.filename);
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+  
+  Q.photoDel(+req.params.id);
+  res.json({ ok: true });
+});
+
+// Toggle photo approval (admin only)
+app.post('/admin/guest-photos/:id/toggle', requireAdmin, (req, res) => {
+  const photo = Q.photoGetById(+req.params.id);
+  if (!photo) {
+    return res.status(404).json({ error: 'Photo not found' });
+  }
+  
+  if (photo.approved) {
+    Q.photoHide(+req.params.id);
+  } else {
+    Q.photoApprove(+req.params.id);
+  }
+  
+  res.json({ ok: true, approved: !photo.approved });
+});
+
+// Download all photos as ZIP (admin only)
+app.get('/admin/guest-photos/download', requireAdmin, async (req, res) => {
+  const archiver = require('archiver');
+  const photos = Q.photoAll();
+  
+  if (photos.length === 0) {
+    return res.status(404).json({ error: 'No photos to download' });
+  }
+  
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename="wedding-memories-${Date.now()}.zip"`);
+  
+  const archive = archiver('zip', { zlib: { level: 9 } });
+  archive.pipe(res);
+  
+  for (const photo of photos) {
+    const filePath = path.join(__dirname, 'public/uploads/guest-photos', photo.filename);
+    if (fs.existsSync(filePath)) {
+      archive.file(filePath, { name: `${photo.created_at.split(' ')[0]}_${photo.name}_${photo.filename}` });
+    }
+  }
+  
+  archive.finalize();
+});
+
+// ═══════════════════════════════════════════════════
 //  ADMIN API
 // ═══════════════════════════════════════════════════
 app.post('/admin/login', loginLimit, (req, res) => {
@@ -544,6 +678,7 @@ app.get('/admin/analytics', requireAdmin, (req, res) => {
     guestbook: Q.gbCount(),
     rsvp:      Q.rsvpCount(),
     blessings: Q.blessAll().length,
+    photos:    Q.photoCount(),
     reactions: Q.reactAll(),
     rsvpStats: Q.rsvpStats(),
     chatCount: Q.chatCount(),

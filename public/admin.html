@@ -191,6 +191,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="sb-a" onclick="show('rsvp')" data-p="rsvp"><span class="sb-ico">&#128140;</span>RSVP<span class="sb-badge" id="badgeRsvp">0</span></div>
       <div class="sb-a" onclick="show('guestbook')" data-p="guestbook"><span class="sb-ico">&#9997;&#65039;</span>Guest Book<span class="sb-badge" id="badgeGb">0</span></div>
       <div class="sb-a" onclick="show('blessings')" data-p="blessings"><span class="sb-ico">&#129330;</span>Blessings<span class="sb-badge" id="badgeBless">0</span></div>
+      <div class="sb-a" onclick="show('photos')" data-p="photos"><span class="sb-ico">&#128247;</span>Guest Photos<span class="sb-badge" id="badgePhotos">0</span></div>
       <div class="sb-a" onclick="show('chat')" data-p="chat"><span class="sb-ico">&#128172;</span>Chat Log</div>
       <div class="sb-sec">Settings</div>
       <div class="sb-a" onclick="show('settings')" data-p="settings"><span class="sb-ico">&#9881;&#65039;</span>Site Settings</div>
@@ -205,6 +206,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div class="sbox"><span class="sn" id="ov-r">0</span><span class="sl">RSVPs</span></div>
           <div class="sbox"><span class="sn" id="ov-g">0</span><span class="sl">Guest Book</span></div>
           <div class="sbox"><span class="sn" id="ov-b">0</span><span class="sl">Blessings</span></div>
+          <div class="sbox"><span class="sn" id="ov-p">0</span><span class="sl">Photos</span></div>
           <div class="sbox"><span class="sn" id="ov-rx">0</span><span class="sl">Reactions</span></div>
           <div class="sbox"><span class="sn" id="ov-c">0</span><span class="sl">Chat Msgs</span></div>
         </div>
@@ -357,6 +359,25 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div id="blessEmpty" class="empty-state" style="display:none"><div class="empty-state-icon">&#129330;</div><div class="empty-state-text">No blessings received yet</div></div>
         </div>
       </div>
+      <!-- GUEST PHOTOS -->
+      <div class="panel" id="p-photos">
+        <div class="ptitle">Guest Photos & Videos</div>
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div class="ctitle" style="margin:0">Memories Shared by Guests</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-g btn-sm" onclick="downloadAllPhotos()" type="button" id="downloadPhotosBtn">&#128229; Download All (ZIP)</button>
+              <button class="btn btn-r btn-sm" onclick="resetAllPhotos()" type="button">&#128465; Reset All</button>
+              <button class="btn btn-o btn-sm" onclick="loadPhotos()" type="button">&#10227; Refresh</button>
+            </div>
+          </div>
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:16px">Photos and videos shared by guests through the Memories tab. These memories are saved for the couple to keep.</p>
+          <div id="photosGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
+            <div class="loading-spinner"></div>
+          </div>
+          <div id="photosEmpty" class="empty-state" style="display:none"><div class="empty-state-icon">&#128247;</div><div class="empty-state-text">No photos shared yet</div><div class="empty-state-desc">Guests can share photos via the Memories tab on mobile</div></div>
+        </div>
+      </div>
       <!-- CHAT LOG -->
       <div class="panel" id="p-chat">
         <div class="ptitle">Chat Log</div>
@@ -460,6 +481,7 @@ function show(name){
   closeSB();
   if(name==='rsvp'){loadRsvp();loadEmailSchedule();}if(name==='guestbook')loadGb();if(name==='blessings')loadBlessings();
   if(name==='chat')loadChat();if(name==='analytics')loadAnalytics();if(name==='stream')loadStreamStatus();if(name==='settings')loadSettings();
+  if(name==='photos')loadPhotos();
 }
 
 function initDashboard(){loadStreamStatus();refreshAnalytics();loadChat();if(refreshInterval)clearInterval(refreshInterval);refreshInterval=setInterval(refreshAnalytics,15000);initSocket();loadServerInfo();}
@@ -468,7 +490,7 @@ function refreshAnalytics(){return api('GET','/admin/analytics').then(function(r
 
 function applyStats(r){
   function set(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
-  var viewers=r.viewers||0,rsvp=r.rsvp||0,gb=r.guestbook||0,bless=r.blessings||0,chat=r.chatCount||0,react=0;
+  var viewers=r.viewers||0,rsvp=r.rsvp||0,gb=r.guestbook||0,bless=r.blessings||0,chat=r.chatCount||0,photos=r.photos||0,react=0;
   if(r.reactions)for(var i=0;i<r.reactions.length;i++)react+=r.reactions[i].cnt||0;
   ['ov-v','an-v'].forEach(function(id){set(id,viewers);});
   ['ov-r','an-r'].forEach(function(id){set(id,rsvp);});
@@ -476,7 +498,8 @@ function applyStats(r){
   ['ov-b','an-b'].forEach(function(id){set(id,bless);});
   ['ov-rx','an-rx'].forEach(function(id){set(id,react);});
   ['ov-c','an-c'].forEach(function(id){set(id,chat);});
-  set('badgeRsvp',rsvp);set('badgeGb',gb);set('badgeBless',bless);set('tbViewers','\uD83D\uDC41 '+viewers);
+  ['ov-p','an-p'].forEach(function(id){set(id,photos);});
+  set('badgeRsvp',rsvp);set('badgeGb',gb);set('badgeBless',bless);set('badgePhotos',photos);set('tbViewers','\uD83D\uDC41 '+viewers);
   renderReactBars(r.reactions||[],'ov-react-bars');renderReactBars(r.reactions||[],'an-react-bars');
   renderRsvpBand(r.rsvpStats||[],'ov-rsvp-bd');renderRsvpBand(r.rsvpStats||[],'an-rsvp-bd');
 }
@@ -836,6 +859,128 @@ function loadChat(){
 }
 
 function loadAnalytics(){refreshAnalytics();}
+
+// ═══════════════════════════════════════════════════════
+// GUEST PHOTOS MANAGEMENT
+// ═══════════════════════════════════════════════════════
+function loadPhotos(){
+  var grid=document.getElementById('photosGrid');
+  var emptyEl=document.getElementById('photosEmpty');
+  grid.innerHTML='<div class="loading-spinner"></div>';
+  
+  api('GET','/admin/guest-photos').then(function(r){
+    if(!r||!r.photos)return;
+    
+    document.getElementById('badgePhotos').textContent=r.photos.length;
+    
+    if(!r.photos.length){
+      grid.innerHTML='';
+      if(emptyEl)emptyEl.style.display='block';
+      return;
+    }
+    if(emptyEl)emptyEl.style.display='none';
+    
+    grid.innerHTML='';
+    for(var i=0;i<r.photos.length;i++){
+      var p=r.photos[i];
+      var isVideo=p.mime_type&&p.mime_type.startsWith('video/');
+      var card=document.createElement('div');
+      card.style.cssText='position:relative;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:4px;overflow:hidden;aspect-ratio:1';
+      
+      var mediaSrc='/uploads/guest-photos/'+p.filename;
+      var html='';
+      
+      if(isVideo){
+        html+='<video src="'+mediaSrc+'" style="width:100%;height:100%;object-fit:cover" muted></video>';
+      }else{
+        html+='<img src="'+mediaSrc+'" style="width:100%;height:100%;object-fit:cover" alt="'+esc(p.name)+'">';
+      }
+      
+      html+='<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));padding:20px 6px 4px">';
+      html+='<div style="font-size:.7rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(p.name)+'</div>';
+      html+='<div style="font-size:.58rem;color:var(--muted)">'+fmt(p.created_at)+'</div>';
+      html+='</div>';
+      html+='<div style="position:absolute;top:4px;right:4px;display:flex;gap:2px">';
+      html+='<button class="btn btn-o" style="padding:3px 6px;font-size:.5rem" onclick="viewPhoto(\''+mediaSrc+'\')" title="View">&#128065;</button>';
+      html+='<button class="btn btn-r" style="padding:3px 6px;font-size:.5rem" onclick="delPhoto('+p.id+',\''+p.filename+'\')" title="Delete">&times;</button>';
+      html+='</div>';
+      
+      card.innerHTML=html;
+      grid.appendChild(card);
+    }
+  });
+}
+
+function viewPhoto(src){
+  window.open(src,'_blank');
+}
+
+function delPhoto(id,filename){
+  if(!confirm('Delete this photo? This cannot be undone.'))return;
+  api('DELETE','/admin/guest-photos/'+id).then(function(r){
+    if(r&&r.ok){
+      toast('Photo deleted');
+      loadPhotos();
+    }else{
+      toast('Failed to delete photo','err');
+    }
+  });
+}
+
+function downloadAllPhotos(){
+  var btn=document.getElementById('downloadPhotosBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span style="animation:spin 1s linear infinite;display:inline-block">&#10227;</span> Preparing...';
+  
+  fetch('/admin/guest-photos/download',{
+    headers:{'Authorization':'Bearer '+localStorage.getItem('hl_admin_token')}
+  })
+  .then(function(r){
+    if(!r.ok)throw new Error('Download failed');
+    return r.blob();
+  })
+  .then(function(blob){
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;
+    a.download='wedding-memories.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Download started! Check your downloads folder.');
+  })
+  .catch(function(err){
+    toast('Failed to download photos','err');
+  })
+  .finally(function(){
+    btn.disabled=false;
+    btn.innerHTML='&#128229; Download All (ZIP)';
+  });
+}
+
+function resetAllPhotos(){
+  if(!confirm('Delete ALL photos? This cannot be undone!'))return;
+  if(!confirm('Are you absolutely sure? All guest memories will be permanently deleted.'))return;
+  
+  api('GET','/admin/guest-photos').then(function(r){
+    if(!r||!r.photos)return;
+    var photos=r.photos;
+    var deleted=0;
+    
+    function deleteNext(i){
+      if(i>=photos.length){
+        toast('All '+deleted+' photos deleted');
+        loadPhotos();
+        refreshAnalytics();
+        return;
+      }
+      api('DELETE','/admin/guest-photos/'+photos[i].id).then(function(){
+        deleted++;
+        deleteNext(i+1);
+      });
+    }
+    deleteNext(0);
+  });
+}
 
 function filterTbl(tbId,q){var lq=q.toLowerCase();var rows=document.querySelectorAll('#'+tbId+' tr');for(var i=0;i<rows.length;i++)rows[i].style.display=!lq||rows[i].textContent.toLowerCase().indexOf(lq)!==-1?'':'none';}
 
